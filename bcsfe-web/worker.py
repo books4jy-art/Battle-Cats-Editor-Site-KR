@@ -103,6 +103,56 @@ TREASURE_LEVELS = ['없음', '조잡한', '평범한', '최고급']
 STORY_STAGES = 48
 
 
+# Legend and event maps: save attribute, BCSFE map code, map id base, EventChapters type.
+# The same arguments the BCSFE CLI passes to edits.map.edit_chapters for each menu.
+MAP_GROUPS: dict[str, tuple[str, str, int, int | None]] = {
+    "legend": ("event_stages", "N", 0, 0),
+    "uncanny": ("uncanny", "NA", 13000, None),
+    "zero": ("zero_legends", "ND", 34000, None),
+    "event": ("event_stages", "S", 1000, 1),
+    "collab": ("event_stages", "C", 2000, 2),
+}
+MAP_GROUP_NAMES = {'legend': '레전드 스토리', 'uncanny': '신 레전드 스토리', 'zero': '레전드 스토리 0', 'event': '이벤트 스테이지', 'collab': '콜라보 스테이지'}
+
+
+def clear_map_group(save: core.SaveFile, key: str, crowns: int) -> int:
+    """Clear every map of a legend/event group that exists in this game version.
+
+    Mirrors the BCSFE CLI's "clear progress" option: only maps that have names in
+    the game data (and exist in the save) are touched, each up to its own crown
+    count (capped at `crowns` when non-zero). Existing clear counts are kept.
+    """
+    from bcsfe.cli.edits import map as map_edits
+
+    attr, code, base, map_type = MAP_GROUPS[key]
+    chapters = getattr(save, attr)
+    if key == "uncanny":
+        chapters = chapters.chapters
+    map_option = core.MapOption.from_save(save)
+    names = core.MapNames(save, code, base_index=base, output=False).map_names
+    if map_option is None or not names:
+        raise RuntimeError('게임 데이터를 내려받지 못했어요 — 나중에 다시 시도하세요' if map_option is None else '이 게임 버전의 게임 데이터에 맵이 없어요')
+
+    total_maps = map_edits.get_total_maps(chapters)
+    cleared = 0
+    for map_id in sorted(names):
+        if map_id >= total_maps:
+            continue
+        stars = map_edits.get_total_stars(map_option, base, chapters, map_id, map_type)
+        if crowns:
+            stars = min(stars, crowns)
+        for star in range(stars):
+            for stage in range(map_edits.get_total_stages(chapters, map_id, star, map_type)):
+                if map_type is None:
+                    chapters.clear_stage(map_id, star, stage, ensure_cleared_only=True)
+                else:
+                    chapters.clear_stage(map_type, map_id, star, stage, ensure_cleared_only=True)
+        cleared += 1
+    if not cleared:
+        raise RuntimeError('이 게임 버전의 게임 데이터에 맵이 없어요')
+    return cleared
+
+
 def clear_story_chapter(chapter: Any) -> None:
     """Clear all 48 stages without lowering existing clear counts."""
     for stage in chapter.stages[:STORY_STAGES]:
@@ -281,9 +331,28 @@ def apply_edits(save: core.SaveFile, edits: dict[str, Any], data_dir: str) -> tu
                     stage.set_treasure(level)
         attempt('보물을 {level}(으)로 설정: {names}'.format(level=TREASURE_LEVELS[level], names=names), f)
 
+    groups = [k for k in MAP_GROUPS if k in (edits.get("clear_maps") or [])]
+    needs_game_data = groups or edits.get("unlock_cats") or edits.get("true_form_cats")
+    if needs_game_data:
+        accept_backup_game_data_repo()
+
+    # Legend/event maps need game data (map names and crown counts).
+    if groups:
+        crowns = int(edits.get("map_crowns") or 0)
+        crown_text = '크라운 {n}개까지'.format(n=crowns) if crowns else '모든 크라운'
+        with game_data_lock(data_dir):
+            for key in groups:
+                result: dict[str, int] = {}
+
+                def f(key=key, result=result):
+                    result["n"] = clear_map_group(save, key, crowns)
+                before = len(done)
+                attempt(MAP_GROUP_NAMES[key], f)
+                if len(done) > before:
+                    done[-1] = '{group}: 맵 {n}개 클리어 ({crowns})'.format(group=MAP_GROUP_NAMES[key], n=result["n"], crowns=crown_text)
+
     # Cat edits need game data (downloaded and cached in data_dir).
     if edits.get("unlock_cats") or edits.get("true_form_cats"):
-        accept_backup_game_data_repo()
         with game_data_lock(data_dir):
             if edits.get("unlock_cats"):
                 def f():

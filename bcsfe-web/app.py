@@ -142,6 +142,15 @@ def parse_edits(form) -> dict[str, Any] | str:
         edits["treasure_level"] = int(treasure)
     if clear_story or treasure:
         edits["story_chapters"] = chapters
+
+    # Legend/event maps: which groups to clear and how many crowns (0 = all).
+    maps = [k for k in ['legend', 'uncanny', 'zero', 'event', 'collab'] if form.get(f"clear_{k}") in ("1", "true", "on")]
+    crowns = (form.get("map_crowns") or "0").strip()
+    if crowns not in ("0", "1", "2", "3", "4"):
+        return '알 수 없는 크라운 수예요.'
+    if maps:
+        edits["clear_maps"] = maps
+        edits["map_crowns"] = int(crowns)
     return edits
 
 
