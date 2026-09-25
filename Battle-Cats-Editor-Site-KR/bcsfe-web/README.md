@@ -1,0 +1,55 @@
+# 냥코 대전쟁 세이브 에디터 (웹)
+
+fieryhenry가 만든 냥코 대전쟁 세이브 파일 에디터 [BCSFE-Python](https://codeberg.org/fieryhenry/BCSFE-Python)을
+웹사이트로 만든 한국어 버전이에요. 영어 버전은
+[Battle-Cats-Editor-Site](https://github.com/books4jy-art/Battle-Cats-Editor-Site)에 있어요.
+
+- **이어하기 코드 탭:** 이어하기 코드, 인증번호, 국가를 입력하고 편집할 항목을 고르세요.
+  사이트가 세이브를 내려받아 편집하고 다시 업로드한 뒤 **새 코드**를 보여 줘요. 원본 세이브 백업도 내려받을 수 있어요.
+- **세이브 파일 탭:** `SAVE_DATA` 파일을 넣고 편집된 파일을 내려받으세요. 이 모드에서는 게임 서버에 아무것도
+  업로드하지 않아요. 편집 항목을 비워 두면 세이브 내용만 보여 줘요.
+
+편집 가능 항목: 고양이 통조림, 경험치, NP, 통솔력, 냥코 티켓, 레어 / 플래티넘 / 레전드 티켓, 플래티넘의 조각,
+획득 가능한 모든 캐릭터 획득, 보유 캐릭터 제3형태 진화, 배틀 아이템 / 캣츠아이 / 고양이 드링크 / 보물 상자 최대.
+새 계정 ID로 업로드하는 옵션(BCSFE의 계정 정지 방지 기능)도 있어요.
+
+국가는 기본으로 **한국**이 선택돼 있어요.
+
+## 내 컴퓨터에서 실행하기
+
+Python 3.9 이상이 필요해요 (<https://www.python.org/downloads/>). Windows에서는 설치할 때
+**"Add Python to PATH"** 를 꼭 체크하세요.
+
+- **Windows:** `start.bat` 더블클릭
+- **Mac / Linux:** `./start.sh` 실행
+
+브라우저에서 <http://localhost:8000> 이 열려요. 사이트를 쓰는 동안 검은 창을 닫지 마세요.
+이 주소는 내 컴퓨터에서만 열려요. 다른 사람도 쓰게 하려면 아래처럼 온라인에 올리세요.
+
+## 온라인에 올리기 (모든 기기에서 사용)
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/books4jy-art/Battle-Cats-Editor-Site-KR)
+
+1. 위의 **Deploy to Render** 버튼을 누르세요 (또는
+   <https://render.com/deploy?repo=https://github.com/books4jy-art/Battle-Cats-Editor-Site-KR> 열기).
+2. GitHub로 Render에 로그인하고 **Deploy Blueprint** 를 누르세요. 설정은 `render.yaml` 이 자동으로 채워요.
+3. 몇 분 뒤 `https://battle-cats-editor-site-kr.onrender.com` 같은 링크가 나와요.
+   휴대폰, 태블릿, 컴퓨터 어디서든 열 수 있어요.
+
+무료 플랜에서는 15분 동안 방문자가 없으면 사이트가 잠들어요. 그 뒤 첫 방문은 1분 정도 걸려요.
+
+## 구조
+
+- `static/index.html`: 페이지 전체 (HTML, CSS, JS 한 파일, 빌드 과정 없음).
+- `app.py`: 작은 Flask 서버. `POST /api/edit` 가 입력을 확인하고, 방문자별 속도 제한(한 번에 하나 + 대기 시간)과
+  동시 작업 수 제한을 걸어요.
+- `worker.py`: 편집마다 **별도 프로세스**에서 BCSFE를 직접 호출해요
+  (`ServerHandler.from_codes` → 편집 → `ServerHandler.get_codes`). 방문자끼리 세이브가 섞이지 않고,
+  편집 하나가 멈춰도 사이트 전체가 멈추지 않아요. 이어하기 코드와 세이브는 로그에 남지 않고, 임시 파일은 삭제돼요.
+
+## 주의
+
+- **계정 정지 위험:** 고양이 통조림과 유료 티켓을 편집하면 계정이 정지될 수 있어요. BCSFE CLI와 같은 방식으로
+  변경 사항을 서버에 알리지만 안전을 보장하지는 않아요. 세이브 편집은 게임 이용약관 위반이며, 책임은 사용자에게 있어요.
+- 캐릭터 획득과 제3형태 진화에는 BCSFE 게임 데이터가 필요해요. 처음 쓸 때 내려받아 저장해 둬요.
+- BCSFE는 GPL-3.0 라이선스예요. 이 사이트 코드를 공개할 때도 GPL-3.0을 따라야 해요.
