@@ -95,6 +95,21 @@ def accept_backup_game_data_repo() -> None:
     game_data_getter.dialog_creator.yes_no_key = yes_no_key
 
 
+# Main story chapters, in BCSFE's get_real_chapters() order.
+STORY_CHAPTERS = ['세계편 제1장', '세계편 제2장', '세계편 제3장', '미래편 제1장', '미래편 제2장', '미래편 제3장', '우주편 제1장', '우주편 제2장', '우주편 제3장']
+# Chapters the game needs cleared first (from BCSFE's clear_previous_chapters).
+STORY_REQUIRES = {1: [0], 2: [0, 1], 3: [0], 4: [0, 3], 5: [0, 3, 4], 6: [0, 3], 7: [0, 3, 6], 8: [0, 3, 6, 7]}
+TREASURE_LEVELS = ['없음', '조잡한', '평범한', '최고급']
+STORY_STAGES = 48
+
+
+def clear_story_chapter(chapter: Any) -> None:
+    """Clear all 48 stages without lowering existing clear counts."""
+    for stage in chapter.stages[:STORY_STAGES]:
+        stage.clear_times = max(stage.clear_times, 1)
+    chapter.progress = max(chapter.progress, STORY_STAGES)
+
+
 def migrate_data(data_dir: str) -> None:
     """Copy BCSFE's bundled files (locales, themes, max values) into data_dir."""
     core.set_data_dir_path(core.Path(data_dir))
@@ -171,6 +186,12 @@ def snapshot(save: core.SaveFile) -> dict[str, int]:
         out["cats_unlocked"] = len(save.cats.get_unlocked_cats())
     except Exception:
         pass
+    try:
+        chapters = save.story.get_real_chapters()
+        out["story_cleared"] = sum(s.clear_times > 0 for c in chapters for s in c.stages[:STORY_STAGES])
+        out["story_treasures"] = sum(s.treasure > 0 for c in chapters for s in c.stages[:STORY_STAGES])
+    except Exception:
+        pass
     return out
 
 
@@ -233,6 +254,32 @@ def apply_edits(save: core.SaveFile, edits: dict[str, Any], data_dir: str) -> tu
             for i in range(len(save.treasure_chests)):
                 save.treasure_chests[i] = maxes.treasure_chests
         attempt("보물 상자 최대", f)
+
+    chapter_ids = edits.get("story_chapters") or []
+    names = ", ".join(STORY_CHAPTERS[i] for i in chapter_ids)
+
+    if edits.get("clear_story") and chapter_ids:
+        required = sorted({r for i in chapter_ids for r in STORY_REQUIRES.get(i, [])} - set(chapter_ids))
+        label = '{names} 클리어'.format(names=names)
+        if required:
+            label += ' (필요한 챕터도 클리어: {names})'.format(names=", ".join(STORY_CHAPTERS[i] for i in required))
+
+        def f():
+            core.StoryChapters.clear_tutorial(save)
+            chapters = save.story.get_real_chapters()
+            for i in required + list(chapter_ids):
+                clear_story_chapter(chapters[i])
+        attempt(label, f)
+
+    if edits.get("treasure_level") is not None and chapter_ids:
+        level = int(edits["treasure_level"])
+
+        def f():
+            chapters = save.story.get_real_chapters()
+            for i in chapter_ids:
+                for stage in chapters[i].get_valid_treasure_stages():
+                    stage.set_treasure(level)
+        attempt('보물을 {level}(으)로 설정: {names}'.format(level=TREASURE_LEVELS[level], names=names), f)
 
     # Cat edits need game data (downloaded and cached in data_dir).
     if edits.get("unlock_cats") or edits.get("true_form_cats"):
