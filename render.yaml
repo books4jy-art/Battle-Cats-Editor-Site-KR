@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: battle-cats-editor-site-kr
+    name: battle-cats-editor-site-kr-28450042
     runtime: docker
     plan: free
     dockerfilePath: ./bcsfe-web/Dockerfile
