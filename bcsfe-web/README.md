@@ -67,6 +67,12 @@ Python 3.9 이상이 필요해요 (<https://www.python.org/downloads/>). Windows
 
 무료 플랜에서는 15분 동안 방문자가 없으면 사이트가 잠들어요. 그 뒤 첫 방문은 1분 정도 걸려요.
 
+## 자동 업데이트
+
+게임이 업데이트되면 세이브를 읽는 BCSFE도 업데이트돼야 해요. `.github/workflows/update-bcsfe.yml` 이 매일 BCSFE의 새 버전을 확인해서,
+새 버전으로 사이트를 시험하고 통과하면 `main` 에 반영해요. 그러면 Render가 사이트를 자동으로 다시 배포해요.
+시험에 실패하면 사이트는 그대로 두고 GitHub 이슈를 열어서 알려 줘요. GitHub의 **Actions** 탭에서 **Run workflow** 로 바로 실행할 수도 있어요.
+
 ## 구조
 
 - `static/index.html`: 페이지 전체 (HTML, CSS, JS 한 파일, 빌드 과정 없음).
