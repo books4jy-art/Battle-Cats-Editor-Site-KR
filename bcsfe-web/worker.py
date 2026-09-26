@@ -320,6 +320,52 @@ def set_talent_orbs(save: core.SaveFile, spec: dict[str, Any]) -> str:
     return '본능 구슬 {n}종류를 {count}개로 설정'.format(n=n, s="" if n == 1 else "s", count=count)
 
 
+ITEM_GROUP_NAMES = {'fruit': '개다래 열매 · 씨앗', 'stone': '수석 · 결정', 'eye': '캣츠아이'}
+BEHEMOTH_GROUP = 9  # matatabi group of behemoth stones/gems (the "crystals")
+
+
+def item_catalog(cc: core.CountryCode) -> dict[str, Any]:
+    """Catfruit/seeds, behemoth stones/gems and catseye types with names, from the newest game data."""
+    save = core.SaveFile(cc=cc, load=False, gv=core.GameVersion(999999))
+    matatabi = core.Matatabi(save)
+    names = matatabi.get_names()
+    eyes = core.core_data.get_gatya_item_buy(save).get_by_category(5)
+    if names is None or not matatabi.matatabi or eyes is None:
+        raise RuntimeError('게임 데이터를 내려받지 못했어요 — 나중에 다시 시도하세요')
+    fruit, stone = [], []
+    for i, (fr, name) in enumerate(zip(matatabi.matatabi, names)):
+        (stone if fr.group == BEHEMOTH_GROUP else fruit).append([i, name or f"#{i}", fr.sort])
+    fruit.sort(key=lambda x: x[2]); stone.sort(key=lambda x: x[2])
+    item_names = core.core_data.get_gatya_item_names(save)
+    maxes = core.core_data.max_value_manager
+    return {"ok": True, "cc": cc.get_code(),
+            "fruit": [x[:2] for x in fruit], "stone": [x[:2] for x in stone],
+            "eye": [[i, item_names.get_name(it.id) or f"#{i}"] for i, it in enumerate(eyes)],
+            "max": {"fruit": maxes.catfruit_new, "stone": maxes.catfruit_new, "eye": maxes.catseyes}}
+
+
+def set_items(save: core.SaveFile, group: str, values: dict[int, int]) -> str:
+    """Set amounts in save.catfruit (fruit, seeds, stones, gems) or save.catseyes by index."""
+    maxes = core.core_data.max_value_manager
+    if group == "eye":
+        target, cap = save.catseyes, maxes.catseyes
+    else:
+        target = save.catfruit
+        cap = maxes.catfruit_new if save.game_version >= 110400 else maxes.catfruit_old
+    set_count, missing = 0, []
+    # Keys arrive as strings after the JSON hop from app.py to this worker.
+    for index, value in sorted((int(k), int(v)) for k, v in values.items()):
+        if index < len(target):
+            target[index] = max(0, min(int(value), cap))
+            set_count += 1
+        else:
+            missing.append(f"#{index}")
+    if not set_count:
+        raise RuntimeError('이 세이브에 해당하는 아이템이 없어요')
+    label = '{group}: {n}종류 설정'.format(group=ITEM_GROUP_NAMES[group], n=set_count, s="" if set_count == 1 else "s")
+    return label + (' (이 세이브에 없는 아이템: {names})'.format(names=", ".join(missing)) if missing else "")
+
+
 def clear_story_chapter(chapter: Any) -> None:
     """Clear all 48 stages without lowering existing clear counts."""
     for stage in chapter.stages[:STORY_STAGES]:
@@ -405,6 +451,11 @@ def snapshot(save: core.SaveFile) -> dict[str, int]:
         pass
     try:
         out["talent_orbs"] = sum(int(o.value) for o in save.talent_orbs.orbs.values())
+    except Exception:
+        pass
+    try:
+        out["catseyes_total"] = sum(int(v) for v in save.catseyes)
+        out["catfruit_total"] = sum(int(v) for v in save.catfruit)
     except Exception:
         pass
     try:
@@ -528,6 +579,16 @@ def apply_edits(save: core.SaveFile, edits: dict[str, Any], data_dir: str) -> tu
         with game_data_lock(data_dir):
             edit_cats(save, edits, attempt, done)
 
+    # Catfruit & seeds, behemoth stones & gems, catseyes (indexes into the save's lists).
+    for group in ("fruit", "stone", "eye"):
+        if edits.get(f"items_{group}"):
+            item_out: dict[str, str] = {}
+            before = len(done)
+            attempt(ITEM_GROUP_NAMES[group],
+                    lambda g=group, o=item_out: o.update(label=set_items(save, g, edits[f"items_{g}"])))
+            if len(done) > before and item_out.get("label"):
+                done[-1] = item_out["label"]
+
     # Talent orbs (orb names and categories come from the game data).
     if edits.get("orbs"):
         accept_backup_game_data_repo()
@@ -584,10 +645,10 @@ def run(job: dict[str, Any]) -> dict[str, Any]:
     cc = core.CountryCode.from_code(job["cc"]) if job.get("cc") else None
     result: dict[str, Any] = {"ok": False}
 
-    if job["mode"] in ("catalog", "orbs"):
+    if job["mode"] in ("catalog", "orbs", "items"):
         accept_backup_game_data_repo()
         with game_data_lock(data_dir):
-            build = cat_catalog if job["mode"] == "catalog" else orb_catalog
+            build = {"catalog": cat_catalog, "orbs": orb_catalog, "items": item_catalog}[job["mode"]]
             return build(cc or core.CountryCode.from_code("en"))
 
     # ---- load the save ----------------------------------------------------
