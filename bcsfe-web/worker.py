@@ -269,6 +269,57 @@ def level_up_cats(save: core.SaveFile, spec: dict[str, Any], skip_ids: list[int]
     return label
 
 
+TRAIT_NAMES = {0: '빨간 적', 1: '떠있는 적', 2: '검은 적', 3: '메탈 적', 4: '천사', 5: '에이리언', 6: '좀비', 7: '고대종', 11: '악마'}  # full names where the game data abbreviates them
+
+
+def orb_effect_name(text: str) -> str:
+    """'Attack Up %@: %@' / '데미지 업 %@【%@】' -> 'Attack Up' / '데미지 업'."""
+    for token in ("【%@】", ": %@", ":%@", "%@"):
+        text = text.replace(token, "")
+    return text.strip()
+
+
+def orb_catalog(cc: core.CountryCode) -> dict[str, Any]:
+    """Talent orb types in the newest game data: grades, traits, effects and each orb's ids."""
+    save = core.SaveFile(cc=cc, load=False, gv=core.GameVersion(999999))
+    info = core.OrbInfoList.create(save)
+    if info is None:
+        raise RuntimeError('게임 데이터를 내려받지 못했어요 — 나중에 다시 시도하세요')
+    grades, traits, effects, orbs = {}, {}, {}, []
+    for orb in info.orb_info_list:
+        raw = orb.raw_orb_info
+        grades[raw.rank_id] = orb.rank
+        if raw.target_id is not None:
+            traits[raw.target_id] = TRAIT_NAMES.get(raw.target_id) or orb.target
+        effects[raw.effect_id] = orb_effect_name(orb.effect)
+        orbs.append([raw.orb_id, raw.rank_id, raw.target_id, raw.effect_id])
+    as_list = lambda d: [[k, d[k]] for k in sorted(d)]
+    return {"ok": True, "cc": cc.get_code(), "grades": as_list(grades), "traits": as_list(traits),
+            "effects": as_list(effects), "orbs": orbs, "max": core.core_data.max_value_manager.talent_orbs}
+
+
+def set_talent_orbs(save: core.SaveFile, spec: dict[str, Any]) -> str:
+    """Set the count of every orb type matching the filters (empty filter = any)."""
+    info = core.OrbInfoList.create(save)
+    if info is None:
+        raise RuntimeError('게임 데이터를 내려받지 못했어요 — 나중에 다시 시도하세요')
+    grades, traits, effects = (set(spec.get(k) or []) for k in ("grades", "traits", "effects"))
+    count = max(0, min(int(spec["count"]), core.core_data.max_value_manager.talent_orbs))
+    chosen = []
+    for orb in info.orb_info_list:
+        raw = orb.raw_orb_info
+        trait = -1 if raw.target_id is None else raw.target_id   # -1 = orbs with no trait
+        if spec.get("all") or ((not grades or raw.rank_id in grades) and (not traits or trait in traits)
+                               and (not effects or raw.effect_id in effects)):
+            chosen.append(raw.orb_id)
+    if not chosen:
+        raise RuntimeError('고른 카테고리에 맞는 구슬이 없어요')
+    for orb_id in chosen:
+        save.talent_orbs.set_orb(orb_id, count)
+    n = len(chosen)
+    return '본능 구슬 {n}종류를 {count}개로 설정'.format(n=n, s="" if n == 1 else "s", count=count)
+
+
 def clear_story_chapter(chapter: Any) -> None:
     """Clear all 48 stages without lowering existing clear counts."""
     for stage in chapter.stages[:STORY_STAGES]:
@@ -350,6 +401,10 @@ def snapshot(save: core.SaveFile) -> dict[str, int]:
             pass
     try:
         out["cats_unlocked"] = len(save.cats.get_unlocked_cats())
+    except Exception:
+        pass
+    try:
+        out["talent_orbs"] = sum(int(o.value) for o in save.talent_orbs.orbs.values())
     except Exception:
         pass
     try:
@@ -473,6 +528,16 @@ def apply_edits(save: core.SaveFile, edits: dict[str, Any], data_dir: str) -> tu
         with game_data_lock(data_dir):
             edit_cats(save, edits, attempt, done)
 
+    # Talent orbs (orb names and categories come from the game data).
+    if edits.get("orbs"):
+        accept_backup_game_data_repo()
+        with game_data_lock(data_dir):
+            orb_out: dict[str, str] = {}
+            before = len(done)
+            attempt('본능 구슬', lambda: orb_out.update(label=set_talent_orbs(save, edits["orbs"])))
+            if len(done) > before and orb_out.get("label"):
+                done[-1] = orb_out["label"]
+
     # Level up after adding/removing, so "all owned" includes new characters.
     if edits.get("upgrade"):
         accept_backup_game_data_repo()
@@ -519,10 +584,11 @@ def run(job: dict[str, Any]) -> dict[str, Any]:
     cc = core.CountryCode.from_code(job["cc"]) if job.get("cc") else None
     result: dict[str, Any] = {"ok": False}
 
-    if job["mode"] == "catalog":
+    if job["mode"] in ("catalog", "orbs"):
         accept_backup_game_data_repo()
         with game_data_lock(data_dir):
-            return cat_catalog(cc or core.CountryCode.from_code("en"))
+            build = cat_catalog if job["mode"] == "catalog" else orb_catalog
+            return build(cc or core.CountryCode.from_code("en"))
 
     # ---- load the save ----------------------------------------------------
     if job["mode"] == "codes":
