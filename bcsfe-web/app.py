@@ -12,6 +12,7 @@ import base64
 import json
 import logging
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -86,28 +87,59 @@ def fail(message: str, status: int = 400):
     return jsonify({"ok": False, "error": message}), status
 
 
-def run_job(job: dict[str, Any]) -> dict[str, Any]:
+jobs: dict[str, dict[str, Any]] = {}   # job id -> running edit, so /api/cancel can find it
+JOB_ID = re.compile(r"[0-9a-f]{16,64}")
+CANCEL_FLAG, EDITING_MARK = "cancel", "editing"   # shared with worker.py
+CANCEL_TEXT = {'early': '세이브를 내려받기 전에 편집을 취소했어요. 아무것도 바뀌지 않았고 이어하기 코드도 그대로 쓸 수 있어요.', 'file': '편집을 취소했어요. 아무것도 바뀌지 않았어요.', 'late': '취소하기엔 늦었어요. 이미 편집을 적용해서 저장하는 중이에요. 새 코드가 나올 때까지 기다려 주세요.', 'nothing': '취소할 편집이 없어요.'}
+
+
+def cancelled_result(mode: str) -> dict[str, Any]:
+    return {"ok": False, "cancelled": True, "error": CANCEL_TEXT["early" if mode == "codes" else "file"]}
+
+
+def run_job(job: dict[str, Any], job_id: str = "", ip: str = "") -> dict[str, Any]:
     job_dir = tempfile.mkdtemp(prefix="bcsfe-job-")
     job = {**job, "data_dir": DATA_DIR, "job_dir": job_dir}
+    entry: dict[str, Any] = {"ip": ip, "dir": job_dir, "mode": job["mode"], "proc": None,
+                              "cancelled": False, "t": time.monotonic()}
+    if job_id:
+        with state_lock:
+            early = jobs.get(job_id)  # a cancel can arrive before the edit request is registered
+            entry["cancelled"] = bool(early and early["ip"] == ip and early["cancelled"])
+            jobs[job_id] = entry
     try:
-        if not job_slots.acquire(timeout=120):
-            return {"ok": False, "error": "지금은 에디터가 바빠요. 1분 뒤에 다시 시도하세요."}
+        deadline = time.monotonic() + 120
+        while not job_slots.acquire(timeout=1):
+            if entry["cancelled"]:
+                return cancelled_result(job["mode"])
+            if time.monotonic() > deadline:
+                return {"ok": False, "error": "지금은 에디터가 바빠요. 1분 뒤에 다시 시도하세요."}
         try:
-            proc = subprocess.run(
-                [sys.executable, WORKER],
-                input=json.dumps(job).encode(),
-                capture_output=True,
-                timeout=JOB_TIMEOUT_SECONDS,
-            )
-        except subprocess.TimeoutExpired:
-            return {"ok": False, "error": "작업이 너무 오래 걸려 중단됐어요. 나중에 다시 시도하세요."}
+            with state_lock:
+                if entry["cancelled"]:
+                    return cancelled_result(job["mode"])
+                proc = subprocess.Popen([sys.executable, WORKER], stdin=subprocess.PIPE,
+                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                entry["proc"] = proc
+            try:
+                out, err = proc.communicate(json.dumps(job).encode(), timeout=JOB_TIMEOUT_SECONDS)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                proc.communicate()
+                return {"ok": False, "error": "작업이 너무 오래 걸려 중단됐어요. 나중에 다시 시도하세요."}
         finally:
             job_slots.release()
-        if proc.returncode != 0 or not proc.stdout:
-            log.error("worker failed (rc=%s): %s", proc.returncode, proc.stderr.decode(errors="replace")[-2000:])
+        if entry["cancelled"] and job["mode"] == "file":
+            return cancelled_result("file")  # killed; nothing was uploaded anywhere
+        if proc.returncode != 0 or not out:
+            log.error("worker failed (rc=%s): %s", proc.returncode, err.decode(errors="replace")[-2000:])
             return {"ok": False, "error": "에디터에 오류가 발생했어요. 서버 로그를 확인하세요."}
-        return json.loads(proc.stdout)
+        return json.loads(out)
     finally:
+        if job_id:
+            with state_lock:
+                if jobs.get(job_id) is entry:
+                    del jobs[job_id]
         shutil.rmtree(job_dir, ignore_errors=True)
 
 
@@ -342,6 +374,9 @@ def edit():
         return fail(edits)
 
     job: dict[str, Any] = {"mode": mode, "cc": country, "edits": edits}
+    job_id = form.get("job_id") or ""
+    if not JOB_ID.fullmatch(job_id):
+        job_id = ""
 
     if mode == "codes":
         tc = (form.get("transfer_code") or "").strip()
@@ -374,16 +409,49 @@ def edit():
         if wait > 0:
             return fail(f"잠시만요 — {int(wait) + 1}초 뒤에 다시 편집할 수 있어요.", 429)
         active_ips.add(ip)
+    result: dict[str, Any] | None = None
     try:
-        result = run_job(job)
+        result = run_job(job, job_id, ip)
     finally:
         with state_lock:
             active_ips.discard(ip)
-            last_run[ip] = time.monotonic()
+            # a cancel before anything was downloaded doesn't count toward the cooldown
+            if not (result and result.get("cancelled") and "before" not in result):
+                last_run[ip] = time.monotonic()
 
     if mode == "file" and not edits:
         result.pop("edited_b64", None)  # nothing changed; just show info
     return jsonify(result)
+
+
+@app.post("/api/cancel")
+def cancel():
+    job_id = request.form.get("job_id") or ""
+    if not JOB_ID.fullmatch(job_id):
+        return fail(CANCEL_TEXT["nothing"], 404)
+    ip = client_ip()
+    with state_lock:
+        now = time.monotonic()
+        for k in [k for k, e in jobs.items() if e["dir"] is None and now - e["t"] > 300]:
+            del jobs[k]
+        entry = jobs.get(job_id)
+        if entry is None:
+            if len(jobs) < 500:  # the edit request may not have reached us yet
+                jobs[job_id] = {"ip": ip, "dir": None, "mode": None, "proc": None, "cancelled": True, "t": now}
+            return jsonify({"ok": True})
+        if entry["ip"] != ip:
+            return fail(CANCEL_TEXT["nothing"], 404)
+        if entry["mode"] == "codes" and os.path.exists(os.path.join(entry["dir"], EDITING_MARK)):
+            return jsonify({"ok": False, "late": True, "error": CANCEL_TEXT["late"]})
+        entry["cancelled"] = True
+        if entry["dir"]:
+            try:
+                open(os.path.join(entry["dir"], CANCEL_FLAG), "w").close()
+            except OSError:
+                pass  # the job just finished
+        if entry["mode"] == "file" and entry["proc"] is not None:
+            entry["proc"].kill()
+    return jsonify({"ok": True})
 
 
 @app.errorhandler(413)

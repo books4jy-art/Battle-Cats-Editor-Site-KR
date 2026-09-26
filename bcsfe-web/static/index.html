@@ -351,6 +351,54 @@
 
   footer { padding: 0 24px 32px; text-align: center; }
   .hidden { display: none !important; }
+
+  /* option groups + jump bar */
+  .panel-head { position: sticky; top: 0; z-index: 6; margin: -24px -24px 16px; padding: 16px 24px 12px;
+                background: rgba(13,15,21,.96); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+                border-radius: 16px 16px 0 0; border-bottom: 1px solid var(--w-05); }
+  .panel-head .panel-tools { margin-bottom: 10px; }
+  .group-jump { display: flex; flex-wrap: nowrap; justify-content: flex-start; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px;
+                -webkit-mask-image: linear-gradient(90deg, #000 88%, transparent); mask-image: linear-gradient(90deg, #000 88%, transparent); }
+  .group-jump::-webkit-scrollbar { display: none; }
+  .group-jump.at-end { -webkit-mask-image: none; mask-image: none; }
+  .group-jump button { flex: none; display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px;
+                       border: 1px solid var(--w-10); background: none; color: var(--w-60); font-size: 11px; cursor: pointer; white-space: nowrap; }
+  .group-jump button:hover { color: #fff; border-color: var(--gc); }
+  .g-dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--gc); }
+  .g-count { font-size: 10px; color: var(--bg); background: var(--gc); border-radius: 999px; padding: 0 6px; line-height: 16px; font-weight: 600; }
+  .groups { display: flex; flex-direction: column; gap: 22px; }
+  .opt-group, details.fold, #safetyBlock { scroll-margin-top: 120px; }
+  .group-head { display: flex; align-items: center; gap: 8px; width: 100%; background: none; border: 0; padding: 0 2px; margin-bottom: 10px;
+                color: var(--w-80); font-size: 12px; font-weight: 600; letter-spacing: .06em; cursor: pointer; text-align: left; }
+  .group-head .chev { width: 14px; height: 14px; margin-left: auto; color: var(--w-40); transition: transform .2s; }
+  .opt-group.closed .group-head .chev { transform: rotate(-90deg); }
+  .opt-group.closed .group-body { display: none; }
+  .group-body { position: relative; display: flex; flex-direction: column; gap: 12px; padding-left: 12px; }
+  .group-body::before { content: ""; position: absolute; left: 0; top: 2px; bottom: 2px; width: 2px; border-radius: 2px; background: var(--gc); opacity: .45; }
+  /* edits to be saved */
+  details.sum-card { margin-top: 16px; padding: 0; }
+  details.sum-card > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 12px; padding: 16px 20px; }
+  details.sum-card > summary::-webkit-details-marker { display: none; }
+  details.sum-card > summary:focus-visible { outline: 2px solid rgba(56,189,248,.6); outline-offset: 2px; border-radius: 16px; }
+  .sum-top { flex: 1; min-width: 0; }
+  .sum-top .section-title { margin: 0 0 4px; }
+  .sum-short { display: block; font-size: 13px; color: var(--w-60); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sum-short b { color: var(--sky-300); font-weight: 500; }
+  details.sum-card .chev { flex: none; width: 16px; height: 16px; color: var(--w-40); transition: transform .2s; }
+  details.sum-card[open] .chev { transform: rotate(180deg); }
+  .sum-body { padding: 4px 20px 18px; border-top: 1px solid var(--w-05); }
+  .sum-list { list-style: none; margin: 0; padding: 0; }
+  .sum-group { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 600; letter-spacing: .06em; color: var(--w-60); margin: 14px 0 6px; }
+  .sum-row { display: flex; border: 1px solid var(--w-10); border-left: 2px solid var(--gc); border-radius: 10px; margin-top: 6px; background: var(--w-02); }
+  .sum-open { flex: 1; min-width: 0; text-align: left; background: none; border: 0; padding: 9px 12px; cursor: pointer; color: inherit; font: inherit; }
+  .sum-title { display: block; font-size: 12px; color: var(--w-80); margin-bottom: 2px; }
+  .sum-open:hover .sum-title { color: #fff; }
+  .sum-lines span { display: block; font-size: 12px; line-height: 1.55; color: var(--w-45); overflow-wrap: anywhere; }
+  .sum-x { flex: none; width: 40px; background: none; border: 0; border-left: 1px solid var(--w-05); color: var(--w-40); font-size: 18px; cursor: pointer; }
+  .sum-x:hover { color: var(--red-300); }
+  #sumHint { margin-top: 12px; }
+  .alert-error.note { border-color: rgba(56,189,248,.35); background: rgba(56,189,248,.06); color: var(--sky-300); }
+  .action-inner #cancelEdit { color: var(--red-300); border-color: rgba(248,113,113,.4); }
 </style>
 </head>
 <body>
@@ -446,6 +494,15 @@
       </div>
     </div>
 
+    <details class="card sum-card" id="summaryFold">
+      <summary><span class="sum-top"><p class="section-title">저장될 편집</p><span class="sum-short" id="sumShort"></span></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+      <div class="sum-body">
+        <p class="hint" id="sumEmpty" style="margin-top:14px">아직 설정한 편집이 없어요. 옵션에서 편집을 고르면 저장하기 전에 여기에 모두 표시돼요.</p>
+        <ul class="sum-list" id="sumList"></ul>
+        <p class="hint hidden" id="sumHint">편집을 누르면 해당 옵션으로 이동하고, ×를 누르면 삭제돼요.</p>
+      </div>
+    </details>
+
     <div id="error" class="alert-error hidden" style="margin-top:24px" role="alert"></div>
 
     <!-- result -->
@@ -485,478 +542,499 @@
   </section>
 
   <aside class="panel card">
-    <div class="panel-tools">
-      <div class="tool-search"><svg class="i16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-        <input type="search" id="optSearch" autocomplete="off" placeholder="옵션 찾기… (예: 본능, 메달)" /></div>
-      <button type="button" class="link-btn" id="collapseAll">모두 접기</button>
+    <div class="panel-head">
+      <div class="panel-tools">
+        <div class="tool-search"><svg class="i16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input type="search" id="optSearch" autocomplete="off" placeholder="옵션 찾기… (예: 본능, 메달)" /></div>
+        <button type="button" class="link-btn" id="collapseAll">모두 접기</button>
+      </div>
+      <div class="group-jump" id="groupJump" role="navigation" aria-label="그룹으로 이동"><button type="button" data-g="base" style="--gc:#38bdf8"><span class="g-dot"></span>기본 아이템<span class="g-count hidden"></span></button><button type="button" data-g="upgrade" style="--gc:#a78bfa"><span class="g-dot"></span>강화 아이템<span class="g-count hidden"></span></button><button type="button" data-g="chars" style="--gc:#f472b6"><span class="g-dot"></span>캐릭터 설정<span class="g-count hidden"></span></button><button type="button" data-g="facility" style="--gc:#fbbf24"><span class="g-dot"></span>기지 · 시설<span class="g-count hidden"></span></button><button type="button" data-g="stages" style="--gc:#34d399"><span class="g-dot"></span>스테이지 설정<span class="g-count hidden"></span></button><button type="button" data-g="account" style="--gc:#fb923c"><span class="g-dot"></span>계정 · 진행<span class="g-count hidden"></span></button><button type="button" data-g="fixes" style="--gc:#f87171"><span class="g-dot"></span>버그 수리<span class="g-count hidden"></span></button></div>
     </div>
     <p class="hint hidden" id="searchEmpty" style="margin:0 0 12px">맞는 옵션이 없어요.</p>
     <div class="stack">
-      <details class="fold" id="basicFold" data-keywords="catfood xp np leadership tickets 고양이 통조림 경험치 티켓 통솔력" open>
-        <summary><p class="section-title">아이템</p><span class="badge hidden" id="basicFoldBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
-        <div class="fold-body">
-          <div id="numbers"></div>
+      <div class="groups">
+      <section class="opt-group" id="grp-base" style="--gc:#38bdf8">
+        <button type="button" class="group-head" aria-expanded="true"><span class="g-dot"></span><span class="g-name">기본 아이템</span><span class="g-count hidden"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+        <div class="group-body">
+          <details class="fold" id="basicFold" data-keywords="catfood xp np leadership tickets 고양이 통조림 경험치 티켓 통솔력" open>
+            <summary><p class="section-title">통조림 · 경험치 · 티켓</p><span class="badge hidden" id="basicFoldBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <div class="fold-body">
+              <div id="numbers"></div>
+            </div>
+          </details>
+          <details class="fold item-fold" id="battleFold" data-keywords="battle items speed up treasure radar endless 배틀 아이템 무제한" data-group="battle">
+            <summary><p class="section-title">배틀 아이템</p><span class="badge hidden" id="battleBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <div class="fold-body">
+              <div class="num-row">
+                <label class="name" for="battleCount">종류별 개수</label>
+                <input class="input" id="battleCount" inputmode="numeric" placeholder="—" autocomplete="off" />
+                <button type="button" class="max-btn" data-item-max="battle">최대</button>
+              </div>
+              <div class="seg item-mode" data-group="battle" style="grid-template-columns:1fr 1fr;margin-top:12px">
+                <button type="button" data-mode="all" aria-pressed="true">모든 종류</button>
+                <button type="button" data-mode="pick" aria-pressed="false">종류 고르기</button>
+              </div>
+              <div class="hidden" id="battlePicks" style="margin-top:18px"></div>
+              <div class="num-row" style="margin-top:14px"><label class="name" for="endlessSel">무제한 사용 (이 종류에)</label>
+                <select class="input" id="endlessSel">
+                  <option value="">바꾸지 않음</option>
+                  <option value="60">1시간</option>
+                  <option value="1440">1일</option>
+                  <option value="10080">7일</option>
+                  <option value="43200">30일</option>
+                  <option value="inf">무한</option>
+                </select>
+              </div>
+              <p class="hint" id="battleStatus" style="margin-top:12px"></p>
+              <p class="hint" id="battleHint" style="margin-top:8px"></p>
+            </div>
+          </details>
+          <details class="fold item-fold" id="drinkFold" data-keywords="catamins 고양이 드링크" data-group="drink">
+            <summary><p class="section-title">고양이 드링크</p><span class="badge hidden" id="drinkBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <div class="fold-body">
+              <div class="num-row">
+                <label class="name" for="drinkCount">종류별 개수</label>
+                <input class="input" id="drinkCount" inputmode="numeric" placeholder="—" autocomplete="off" />
+                <button type="button" class="max-btn" data-item-max="drink">최대</button>
+              </div>
+              <div class="seg item-mode" data-group="drink" style="grid-template-columns:1fr 1fr;margin-top:12px">
+                <button type="button" data-mode="all" aria-pressed="true">모든 종류</button>
+                <button type="button" data-mode="pick" aria-pressed="false">종류 고르기</button>
+              </div>
+              <div class="hidden" id="drinkPicks" style="margin-top:18px"></div>
+              <p class="hint" id="drinkStatus" style="margin-top:12px"></p>
+              <p class="hint" id="drinkHint" style="margin-top:8px"></p>
+            </div>
+          </details>
+          <details class="fold item-fold" id="chestFold" data-keywords="treasure chests 보물 상자" data-group="chest">
+            <summary><p class="section-title">보물 상자</p><span class="badge hidden" id="chestBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <div class="fold-body">
+              <div class="num-row">
+                <label class="name" for="chestCount">종류별 개수</label>
+                <input class="input" id="chestCount" inputmode="numeric" placeholder="—" autocomplete="off" />
+                <button type="button" class="max-btn" data-item-max="chest">최대</button>
+              </div>
+              <div class="seg item-mode" data-group="chest" style="grid-template-columns:1fr 1fr;margin-top:12px">
+                <button type="button" data-mode="all" aria-pressed="true">모든 종류</button>
+                <button type="button" data-mode="pick" aria-pressed="false">종류 고르기</button>
+              </div>
+              <div class="hidden" id="chestPicks" style="margin-top:18px"></div>
+              <p class="hint" id="chestStatus" style="margin-top:12px"></p>
+              <p class="hint" id="chestHint" style="margin-top:8px"></p>
+            </div>
+          </details>
+          <details class="fold item-fold" id="medalFold" data-keywords="labyrinth medals 미궁 메달 훈장" data-group="medal">
+            <summary><p class="section-title">미궁 훈장</p><span class="badge hidden" id="medalBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <div class="fold-body">
+              <div class="num-row">
+                <label class="name" for="medalCount">종류별 개수</label>
+                <input class="input" id="medalCount" inputmode="numeric" placeholder="—" autocomplete="off" />
+                <button type="button" class="max-btn" data-item-max="medal">최대</button>
+              </div>
+              <div class="seg item-mode" data-group="medal" style="grid-template-columns:1fr 1fr;margin-top:12px">
+                <button type="button" data-mode="all" aria-pressed="true">모든 종류</button>
+                <button type="button" data-mode="pick" aria-pressed="false">종류 고르기</button>
+              </div>
+              <div class="hidden" id="medalPicks" style="margin-top:18px"></div>
+              <p class="hint" id="medalStatus" style="margin-top:12px"></p>
+              <p class="hint" id="medalHint" style="margin-top:8px"></p>
+            </div>
+          </details>
         </div>
-      </details>
+      </section>
+      <section class="opt-group" id="grp-upgrade" style="--gc:#a78bfa">
+        <button type="button" class="group-head" aria-expanded="true"><span class="g-dot"></span><span class="g-name">강화 아이템</span><span class="g-count hidden"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+        <div class="group-body">
+          <details class="fold" id="orbFold" data-keywords="talent orbs 본능 구슬">
+            <summary><p class="section-title">본능 구슬</p><span class="badge hidden" id="orbBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <div class="fold-body">
+              <div class="num-row">
+                <label class="name" for="orbCount">종류별 개수</label>
+                <input class="input" id="orbCount" inputmode="numeric" placeholder="—" autocomplete="off" />
+                <button type="button" class="max-btn" id="orbMax">최대</button>
+              </div>
+              <div class="seg" id="orbMode" style="grid-template-columns:1fr 1fr;margin-top:12px">
+                <button type="button" data-mode="all" aria-pressed="true">모든 구슬</button>
+                <button type="button" data-mode="filter" aria-pressed="false">카테고리별</button>
+              </div>
+              <div id="orbFilters" class="hidden" style="margin-top:18px">
+                <p class="sub-title">등급</p>
+                <div class="chip-grid" id="orbGrades"></div>
+                <p class="sub-title">속성</p>
+                <div class="chip-grid" id="orbTraits"></div>
+                <p class="sub-title">효과</p>
+                <div class="chip-grid" id="orbEffects"></div>
+              </div>
+              <p class="hint" id="orbStatus" style="margin-top:12px"></p>
+              <p class="hint" style="margin-top:8px">고른 구슬 종류마다 개수를 정해요 (0이면 없애요). 카테고리마다 버튼을 여러 개 고를 수 있고, 고른 모든 카테고리에 맞는 구슬만 바뀌어요. 비워 둔 카테고리는 전부 포함돼요.</p>
+            </div>
+          </details>
+          <details class="fold item-fold" id="fruitFold" data-keywords="catfruit seeds 개다래 씨앗 열매" data-group="fruit">
+            <summary><p class="section-title">개다래 열매 · 씨앗</p><span class="badge hidden" id="fruitBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <div class="fold-body">
+              <div class="num-row">
+                <label class="name" for="fruitCount">종류별 개수</label>
+                <input class="input" id="fruitCount" inputmode="numeric" placeholder="—" autocomplete="off" />
+                <button type="button" class="max-btn" data-item-max="fruit">최대</button>
+              </div>
+              <div class="seg item-mode" data-group="fruit" style="grid-template-columns:1fr 1fr;margin-top:12px">
+                <button type="button" data-mode="all" aria-pressed="true">모든 종류</button>
+                <button type="button" data-mode="pick" aria-pressed="false">종류 고르기</button>
+              </div>
+              <div class="hidden" id="fruitPicks" style="margin-top:18px"></div>
+              <p class="hint" id="fruitStatus" style="margin-top:12px"></p>
+              <p class="hint" id="fruitHint" style="margin-top:8px"></p>
+            </div>
+          </details>
+          <details class="fold item-fold" id="stoneFold" data-keywords="behemoth stones gems crystals 수석 결정" data-group="stone">
+            <summary><p class="section-title">수석 · 결정</p><span class="badge hidden" id="stoneBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <div class="fold-body">
+              <div class="num-row">
+                <label class="name" for="stoneCount">종류별 개수</label>
+                <input class="input" id="stoneCount" inputmode="numeric" placeholder="—" autocomplete="off" />
+                <button type="button" class="max-btn" data-item-max="stone">최대</button>
+              </div>
+              <div class="seg item-mode" data-group="stone" style="grid-template-columns:1fr 1fr;margin-top:12px">
+                <button type="button" data-mode="all" aria-pressed="true">모든 종류</button>
+                <button type="button" data-mode="pick" aria-pressed="false">종류 고르기</button>
+              </div>
+              <div class="hidden" id="stonePicks" style="margin-top:18px"></div>
+              <p class="hint" id="stoneStatus" style="margin-top:12px"></p>
+              <p class="hint" id="stoneHint" style="margin-top:8px"></p>
+            </div>
+          </details>
+          <details class="fold item-fold" id="eyeFold" data-keywords="catseyes 캣츠아이" data-group="eye">
+            <summary><p class="section-title">캣츠아이</p><span class="badge hidden" id="eyeBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <div class="fold-body">
+              <div class="num-row">
+                <label class="name" for="eyeCount">종류별 개수</label>
+                <input class="input" id="eyeCount" inputmode="numeric" placeholder="—" autocomplete="off" />
+                <button type="button" class="max-btn" data-item-max="eye">최대</button>
+              </div>
+              <div class="seg item-mode" data-group="eye" style="grid-template-columns:1fr 1fr;margin-top:12px">
+                <button type="button" data-mode="all" aria-pressed="true">모든 종류</button>
+                <button type="button" data-mode="pick" aria-pressed="false">종류 고르기</button>
+              </div>
+              <div class="hidden" id="eyePicks" style="margin-top:18px"></div>
+              <p class="hint" id="eyeStatus" style="margin-top:12px"></p>
+              <p class="hint" id="eyeHint" style="margin-top:8px"></p>
+            </div>
+          </details>
+          <details class="fold item-fold" id="materialFold" data-keywords="base materials bricks 성 재료 벽돌" data-group="material">
+            <summary><p class="section-title">성 재료</p><span class="badge hidden" id="materialBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <div class="fold-body">
+              <div class="num-row">
+                <label class="name" for="materialCount">종류별 개수</label>
+                <input class="input" id="materialCount" inputmode="numeric" placeholder="—" autocomplete="off" />
+                <button type="button" class="max-btn" data-item-max="material">최대</button>
+              </div>
+              <div class="seg item-mode" data-group="material" style="grid-template-columns:1fr 1fr;margin-top:12px">
+                <button type="button" data-mode="all" aria-pressed="true">모든 종류</button>
+                <button type="button" data-mode="pick" aria-pressed="false">종류 고르기</button>
+              </div>
+              <div class="hidden" id="materialPicks" style="margin-top:18px"></div>
+              <p class="hint" id="materialStatus" style="margin-top:12px"></p>
+              <p class="hint" id="materialHint" style="margin-top:8px"></p>
+            </div>
+          </details>
+        </div>
+      </section>
+      <section class="opt-group" id="grp-chars" style="--gc:#f472b6">
+        <button type="button" class="group-head" aria-expanded="true"><span class="g-dot"></span><span class="g-name">캐릭터 설정</span><span class="g-count hidden"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+        <div class="group-body">
+          <details class="fold auto-badge" id="charFold" data-keywords="unlock true form 획득 진화" open>
+            <summary><p class="section-title">전체 획득 · 진화</p><span class="badge hidden" id="charFoldBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <div class="fold-body">
+            <label class="switch-row"><span class="name"><svg class="i16"><use href="#i-cat"/></svg> 모든 캐릭터 획득</span><span class="switch"><input type="checkbox" name="unlock_cats" /><span class="track"></span></span></label>
+            <label class="switch-row"><span class="name"><svg class="i16"><use href="#i-sparkles"/></svg> 보유 캐릭터 제3형태 진화</span><span class="switch"><input type="checkbox" name="true_form_cats" /><span class="track"></span></span></label>
+            </div>
+          </details>
+          <details class="fold" id="catFold" data-keywords="cats characters add remove level 캐릭터 추가 삭제 레벨 레벨업">
+            <summary><p class="section-title">캐릭터 편집</p><span class="badge hidden" id="catBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <div class="fold-body">
+              <p class="sub-title">ID 또는 이름으로 찾기</p>
+              <input class="input" id="catSearch" type="search" autocomplete="off" spellcheck="false" placeholder="예: 25, 100-110 또는 무트" style="height:36px;font-size:13px" />
+              <p class="hint" id="catStatus" style="margin-top:6px"></p>
+              <div class="cat-results" id="catResults"></div>
+              <p class="sub-title">추가할 캐릭터</p>
+              <div class="chips" id="addChips"></div>
+              <p class="sub-title">삭제할 캐릭터</p>
+              <div class="chips" id="removeChips"></div>
+              <p class="sub-title">등급별로 추가</p>
+              <div class="seg cols3" id="rarities">
+              <button type="button" data-rarity="0" aria-pressed="false">기본 캐릭터</button>
+              <button type="button" data-rarity="1" aria-pressed="false">EX</button>
+              <button type="button" data-rarity="2" aria-pressed="false">레어</button>
+              <button type="button" data-rarity="3" aria-pressed="false">슈퍼 레어</button>
+              <button type="button" data-rarity="4" aria-pressed="false">울트라 슈퍼 레어</button>
+              <button type="button" data-rarity="5" aria-pressed="false">레전드 레어</button>
+              </div>
+              <p class="sub-title">레벨업</p>
+              <input class="input" id="levelInput" autocomplete="off" spellcheck="false" placeholder="예: 50+10, 30, +20 또는 최대" style="height:36px;font-size:13px" />
+              <div class="seg" id="levelTarget" style="grid-template-columns:1fr 1fr;margin-top:8px">
+                <button type="button" data-target="all" aria-pressed="true">보유한 모든 캐릭터</button>
+                <button type="button" data-target="picked" aria-pressed="false">선택한 캐릭터 (Lv)</button>
+              </div>
+              <div id="levelPickedBox" class="hidden">
+                <p class="sub-title">레벨업할 캐릭터</p>
+                <div class="chips" id="levelChips"></div>
+              </div>
+              <p class="hint" style="margin-top:10px">50+10처럼 레벨+플러스 레벨을 입력하세요. 한쪽을 비우면 그대로 둬요 (예: +10은 플러스 레벨만 바꿔요). 레벨은 캐릭터마다 최대치까지만 올라가고, 캣츠아이 사용도 게임처럼 계산돼요. 보유하지 않은 선택 캐릭터는 함께 추가돼요.</p>
+              <p class="hint" style="margin-top:12px">등급별 추가는 게임 버전에서 획득할 수 있는 캐릭터만 추가해요. 캐릭터를 삭제하면 레벨과 형태도 초기화돼요.</p>
+            </div>
+          </details>
+          <details class="fold auto-badge" id="formFold" data-keywords="true form ultra 4th fourth talents guide 제3형태 제4형태 본능 도감 진화">
+            <summary><p class="section-title">형태 · 본능</p><span class="badge hidden" id="formFoldBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <div class="fold-body">
+              <div class="seg" id="formTarget" style="grid-template-columns:1fr 1fr">
+                <button type="button" data-target="all" aria-pressed="true">보유한 모든 캐릭터</button>
+                <button type="button" data-target="picked" aria-pressed="false">선택한 캐릭터 (Lv)</button>
+              </div>
+              <p class="hint" id="formPickedNote" style="margin-top:8px"></p>
+              <div class="set-list">
+              <div class="set-row"><label class="name" for="f-form_true">제3형태</label>
+                <select class="input" id="f-form_true" name="form_true" data-send>
+                  <option value="">바꾸지 않음</option>
+                  <option value="evolve">진화</option>
+                  <option value="force">강제 진화</option>
+                  <option value="remove">해제</option>
+                </select>
+              </div>
+              <div class="set-row"><label class="name" for="f-form_fourth">제4형태</label>
+                <select class="input" id="f-form_fourth" name="form_fourth" data-send>
+                  <option value="">바꾸지 않음</option>
+                  <option value="evolve">진화</option>
+                  <option value="force">강제 진화</option>
+                  <option value="remove">해제</option>
+                </select>
+              </div>
+              <div class="set-row"><label class="name" for="f-form_talents">본능</label>
+                <select class="input" id="f-form_talents" name="form_talents" data-send>
+                  <option value="">바꾸지 않음</option>
+                  <option value="max">전부 최대</option>
+                  <option value="remove">초기화</option>
+                </select>
+              </div>
+              <div class="set-row"><label class="name" for="f-form_guide">캐릭터 도감</label>
+                <select class="input" id="f-form_guide" name="form_guide" data-send>
+                  <option value="">바꾸지 않음</option>
+                  <option value="add">등록</option>
+                  <option value="remove">해제</option>
+                </select>
+              </div>
+              </div>
+              <p class="hint" style="margin-top:10px">‘진화’는 캐릭터에게 실제로 있는 형태만 적용해요. ‘강제 진화’는 게임에 없는 형태도 설정해서 이상하게 보일 수 있어요. 선택한 캐릭터는 캐릭터 편집의 Lv 버튼으로 골라요.</p>
+            </div>
+          </details>
+        </div>
+      </section>
+      <section class="opt-group" id="grp-facility" style="--gc:#fbbf24">
+        <button type="button" class="group-head" aria-expanded="true"><span class="g-dot"></span><span class="g-name">기지 · 시설</span><span class="g-count hidden"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+        <div class="group-body">
+          <details class="fold auto-badge" id="skillFold" data-keywords="special skills cat cannon power up 특수 능력 냥코 대포 파워업 강화">
+            <summary><p class="section-title">특수 능력 (기지 강화)</p><span class="badge hidden" id="skillFoldBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <div class="fold-body">
+              <div class="num-row"><label class="name" for="f-skill_level">레벨</label>
+                <input class="input" id="f-skill_level" name="skill_level" autocomplete="off" placeholder="예: 최대+최대" data-send style="width:140px" />
+              </div>
+              <div class="seg" id="skillMode" style="grid-template-columns:1fr 1fr;margin-top:12px">
+                <button type="button" data-mode="all" aria-pressed="true">모든 능력</button>
+                <button type="button" data-mode="pick" aria-pressed="false">능력 고르기</button>
+              </div>
+              <div class="chip-grid hidden" id="skillPicks" style="margin-top:14px"></div>
+              <p class="hint" id="skillStatus" style="margin-top:10px"></p>
+              <p class="hint" style="margin-top:6px">20+10처럼 레벨+플러스를 입력하거나 최대+최대를 입력하세요. 능력마다 최대치까지만 올라가요 (버튼에 마우스를 올리면 보여요).</p>
+            </div>
+          </details>
+          <details class="fold auto-badge" id="ototoFold" data-keywords="ototo cat cannon engineers 오토토 냥코 대포 조수 기술자">
+            <summary><p class="section-title">오토토 · 냥코 대포</p><span class="badge hidden" id="ototoFoldBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <div class="fold-body">
+              <div class="num-row"><label class="name" for="f-engineers">조수</label>
+                <input class="input" id="f-engineers" name="engineers" inputmode="numeric" placeholder="—" autocomplete="off" data-send data-num />
+                <button type="button" class="max-btn" data-fill="engineers" data-fill-value="engineers_max">최대</button>
+              </div>
+              <div style="margin-top:14px">          <label class="switch-row"><span class="name">모든 냥코 대포 최대 강화 (모든 부품)</span><span class="switch"><input type="checkbox" name="max_cannons" data-send /><span class="track"></span></span></label></div>
+              <p class="hint" style="margin-top:10px">대포를 만드는 성 재료는 아래 성 재료 영역에서 정해요.</p>
+            </div>
+          </details>
+          <details class="fold auto-badge" id="gamaFold" data-keywords="gamatoto helpers cat shrine 가마토토 대원 고양이 신사">
+            <summary><p class="section-title">가마토토 · 고양이 신사</p><span class="badge hidden" id="gamaFoldBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <div class="fold-body">
+              <div class="stat-grid">
+                <div class="stat"><label for="f-gama_level">가마토토 레벨</label><div class="stat-in"><input class="input" id="f-gama_level" name="gama_level" inputmode="numeric" placeholder="—" data-send data-num /><button type="button" class="max-btn" data-fill="gama_level" data-fill-value="gamatoto_max">최대</button></div></div>
+                <div class="stat"><label for="f-shrine_level">고양이 신사 레벨</label><div class="stat-in"><input class="input" id="f-shrine_level" name="shrine_level" inputmode="numeric" placeholder="—" data-send data-num /><button type="button" class="max-btn" data-fill="shrine_level" data-fill-value="shrine_max">최대</button></div></div>
+              </div>
+              <p class="sub-title">가마토토 대원 <span id="helperRoom" class="hint"></span></p>
+              <div class="helper-grid" id="helperGrid"></div>
+              <div style="margin-top:14px">          <label class="switch-row"><span class="name">고양이 신사 다시 나타나게 하기</span><span class="switch"><input type="checkbox" name="shrine_show" data-send /><span class="track"></span></span></label></div>
+              <p class="hint" style="margin-top:10px">대원: 등급별 인원 수를 정해요 (전체 인원은 팀 크기를 넘을 수 없어요).</p>
+            </div>
+          </details>
+        </div>
+      </section>
+      <section class="opt-group" id="grp-stages" style="--gc:#34d399">
+        <button type="button" class="group-head" aria-expanded="true"><span class="g-dot"></span><span class="g-name">스테이지 설정</span><span class="g-count hidden"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+        <div class="group-body">
+          <details class="fold" id="stageFold" data-keywords="stages story legend treasures uncanny zero event collab gauntlet tower 스테이지 스토리 레전드 보물 이벤트 콜라보 건틀렛 탑">
+            <summary><p class="section-title">스테이지</p><span class="badge hidden" id="stageBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <div class="fold-body">
+            <p class="sub-title">스토리</p>
+            <div class="seg cols3" id="chapters">
+              <button type="button" data-ch="0" aria-pressed="false" title="세계편 제1장">세계편 1장</button>
+              <button type="button" data-ch="1" aria-pressed="false" title="세계편 제2장">세계편 2장</button>
+              <button type="button" data-ch="2" aria-pressed="false" title="세계편 제3장">세계편 3장</button>
+              <button type="button" data-ch="3" aria-pressed="false" title="미래편 제1장">미래편 1장</button>
+              <button type="button" data-ch="4" aria-pressed="false" title="미래편 제2장">미래편 2장</button>
+              <button type="button" data-ch="5" aria-pressed="false" title="미래편 제3장">미래편 3장</button>
+              <button type="button" data-ch="6" aria-pressed="false" title="우주편 제1장">우주편 1장</button>
+              <button type="button" data-ch="7" aria-pressed="false" title="우주편 제2장">우주편 2장</button>
+              <button type="button" data-ch="8" aria-pressed="false" title="우주편 제3장">우주편 3장</button>
+            </div>
+            <button type="button" class="link-btn" id="chAll">전체 선택</button>
+            <label class="switch-row" style="margin-top:14px"><span class="name"><svg class="i16"><use href="#i-flag"/></svg> 선택한 챕터 클리어</span><span class="switch"><input type="checkbox" name="clear_story" data-stage-edit /><span class="track"></span></span></label>
+            <div class="switch-row" style="margin-top:14px"><label class="name" for="treasureLevel"><svg class="i16"><use href="#i-gem"/></svg> 보물</label>
+              <select class="input" id="treasureLevel" name="treasure_level">
+                <option value="">바꾸지 않음</option>
+                <option value="0">없음</option>
+                <option value="1">조잡한</option>
+                <option value="2">평범한</option>
+                <option value="3">최고급</option>
+              </select>
+            </div>
+            <p class="hint" style="margin-top:12px">뒤 챕터를 클리어하면 필요한 앞 챕터도 함께 클리어해요. 보물은 선택한 챕터의 48개 스테이지 전체에 적용돼요.</p>
 
-      <details class="fold auto-badge" id="charFold" data-keywords="unlock true form 획득 진화" open>
-        <summary><p class="section-title">캐릭터</p><span class="badge hidden" id="charFoldBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
-        <div class="fold-body">
-        <label class="switch-row"><span class="name"><svg class="i16"><use href="#i-cat"/></svg> 모든 캐릭터 획득</span><span class="switch"><input type="checkbox" name="unlock_cats" /><span class="track"></span></span></label>
-        <label class="switch-row"><span class="name"><svg class="i16"><use href="#i-sparkles"/></svg> 보유 캐릭터 제3형태 진화</span><span class="switch"><input type="checkbox" name="true_form_cats" /><span class="track"></span></span></label>
+            <p class="sub-title">레전드 · 이벤트</p>
+              <label class="switch-row"><span class="name">레전드 스토리</span><span class="switch"><input type="checkbox" name="clear_legend" data-stage-edit /><span class="track"></span></span></label>
+              <label class="switch-row"><span class="name">신 레전드 스토리</span><span class="switch"><input type="checkbox" name="clear_uncanny" data-stage-edit /><span class="track"></span></span></label>
+              <label class="switch-row"><span class="name">레전드 스토리 0</span><span class="switch"><input type="checkbox" name="clear_zero" data-stage-edit /><span class="track"></span></span></label>
+              <label class="switch-row"><span class="name">이벤트 스테이지</span><span class="switch"><input type="checkbox" name="clear_event" data-stage-edit /><span class="track"></span></span></label>
+              <label class="switch-row"><span class="name">콜라보 스테이지</span><span class="switch"><input type="checkbox" name="clear_collab" data-stage-edit /><span class="track"></span></span></label>
+            <p class="sub-title">그 외 스테이지</p>
+            <div class="toggle-chips">
+              <label><input type="checkbox" name="clear_gauntlet" data-stage-edit /><span>건틀렛</span></label>
+              <label><input type="checkbox" name="clear_collab_gauntlet" data-stage-edit /><span>콜라보 건틀렛</span></label>
+              <label><input type="checkbox" name="clear_behemoth" data-stage-edit /><span>거대 수석 사냥</span></label>
+              <label><input type="checkbox" name="clear_enigma" data-stage-edit /><span>수수께끼 스테이지</span></label>
+              <label><input type="checkbox" name="clear_tower" data-stage-edit /><span>탑</span></label>
+              <label><input type="checkbox" name="clear_legend_quest" data-stage-edit /><span>레전드 퀘스트</span></label>
+              <label><input type="checkbox" name="clear_catamin_stage" data-stage-edit /><span>고양이 드링크 스테이지</span></label>
+              <label><input type="checkbox" name="clear_catclaw" data-stage-edit /><span>냥코 도장 랭킹전</span></label>
+            </div>
+            <div class="switch-row" style="margin-top:14px"><label class="name" for="mapCrowns"><svg class="i16"><use href="#i-crown"/></svg> 크라운</label>
+              <select class="input" id="mapCrowns" name="map_crowns">
+                <option value="0">최대</option>
+                <option value="1">1개</option>
+                <option value="2">2개</option>
+                <option value="3">3개</option>
+                <option value="4">4개</option>
+              </select>
+            </div>
+            <p class="hint" style="margin-top:12px">게임 버전에 있는 모든 맵을 고른 크라운 수까지 클리어해요. 기존 클리어 횟수는 그대로예요.</p>
+            </div>
+          </details>
+          <details class="fold auto-badge" id="specialFold" data-keywords="aku outbreaks zombie filibuster challenge dojo score itf 악마 좀비 필리버스터 챌린지 도장 점수">
+            <summary><p class="section-title">특수 스테이지 · 점수</p><span class="badge hidden" id="specialFoldBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <div class="fold-body">
+              <div class="set-list">
+              <label class="switch-row"><span class="name">악마 영역 해금</span><span class="switch"><input type="checkbox" name="aku_realm" data-send /><span class="track"></span></span></label>
+              <label class="switch-row"><span class="name">악마편 클리어</span><span class="switch"><input type="checkbox" name="aku_chapters" data-send /><span class="track"></span></span></label>
+              <label class="switch-row"><span class="name">좀비 습격 클리어</span><span class="switch"><input type="checkbox" name="outbreaks" data-send /><span class="track"></span></span></label>
+              <label class="switch-row"><span class="name">필리버스터 스테이지 재클리어</span><span class="switch"><input type="checkbox" name="filibuster" data-send /><span class="track"></span></span></label>
+              </div>
+              <p class="sub-title">점수</p>
+              <div class="num-row"><label class="name" for="f-score_challenge">챌린지 배틀 점수</label>
+                <input class="input" id="f-score_challenge" name="score_challenge" inputmode="numeric" placeholder="—" autocomplete="off" data-send data-num />
+                
+              </div>
+              <div class="num-row"><label class="name" for="f-score_dojo">도장 점수</label>
+                <input class="input" id="f-score_dojo" name="score_dojo" inputmode="numeric" placeholder="—" autocomplete="off" data-send data-num />
+                
+              </div>
+              <div class="num-row"><label class="name" for="f-score_itf">미래편 타임 스코어</label>
+                <input class="input" id="f-score_itf" name="score_itf" inputmode="numeric" placeholder="—" autocomplete="off" data-send data-num />
+                
+              </div>
+            </div>
+          </details>
         </div>
-      </details>
-
-      <details class="fold" id="catFold" data-keywords="cats characters add remove level 캐릭터 추가 삭제 레벨 레벨업">
-        <summary><p class="section-title">캐릭터 편집</p><span class="badge hidden" id="catBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
-        <div class="fold-body">
-          <p class="sub-title">ID 또는 이름으로 찾기</p>
-          <input class="input" id="catSearch" type="search" autocomplete="off" spellcheck="false" placeholder="예: 25, 100-110 또는 무트" style="height:36px;font-size:13px" />
-          <p class="hint" id="catStatus" style="margin-top:6px"></p>
-          <div class="cat-results" id="catResults"></div>
-          <p class="sub-title">추가할 캐릭터</p>
-          <div class="chips" id="addChips"></div>
-          <p class="sub-title">삭제할 캐릭터</p>
-          <div class="chips" id="removeChips"></div>
-          <p class="sub-title">등급별로 추가</p>
-          <div class="seg cols3" id="rarities">
-          <button type="button" data-rarity="0" aria-pressed="false">기본 캐릭터</button>
-          <button type="button" data-rarity="1" aria-pressed="false">EX</button>
-          <button type="button" data-rarity="2" aria-pressed="false">레어</button>
-          <button type="button" data-rarity="3" aria-pressed="false">슈퍼 레어</button>
-          <button type="button" data-rarity="4" aria-pressed="false">울트라 슈퍼 레어</button>
-          <button type="button" data-rarity="5" aria-pressed="false">레전드 레어</button>
-          </div>
-          <p class="sub-title">레벨업</p>
-          <input class="input" id="levelInput" autocomplete="off" spellcheck="false" placeholder="예: 50+10, 30, +20 또는 최대" style="height:36px;font-size:13px" />
-          <div class="seg" id="levelTarget" style="grid-template-columns:1fr 1fr;margin-top:8px">
-            <button type="button" data-target="all" aria-pressed="true">보유한 모든 캐릭터</button>
-            <button type="button" data-target="picked" aria-pressed="false">선택한 캐릭터 (Lv)</button>
-          </div>
-          <div id="levelPickedBox" class="hidden">
-            <p class="sub-title">레벨업할 캐릭터</p>
-            <div class="chips" id="levelChips"></div>
-          </div>
-          <p class="hint" style="margin-top:10px">50+10처럼 레벨+플러스 레벨을 입력하세요. 한쪽을 비우면 그대로 둬요 (예: +10은 플러스 레벨만 바꿔요). 레벨은 캐릭터마다 최대치까지만 올라가고, 캣츠아이 사용도 게임처럼 계산돼요. 보유하지 않은 선택 캐릭터는 함께 추가돼요.</p>
-          <p class="hint" style="margin-top:12px">등급별 추가는 게임 버전에서 획득할 수 있는 캐릭터만 추가해요. 캐릭터를 삭제하면 레벨과 형태도 초기화돼요.</p>
+      </section>
+      <section class="opt-group" id="grp-account" style="--gc:#fb923c">
+        <button type="button" class="group-head" aria-expanded="true"><span class="g-dot"></span><span class="g-name">계정 · 진행</span><span class="g-count hidden"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+        <div class="group-body">
+          <details class="fold auto-badge" id="progressFold" data-keywords="lineup slots playtime rank rewards medals missions enemy guide gold pass 편성 슬롯 플레이 시간 랭크 보상 메달 미션 적 도감 골드 회원">
+            <summary><p class="section-title">진행 · 계정</p><span class="badge hidden" id="progressFoldBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <div class="fold-body">
+              <div class="set-list">
+              <div class="num-row"><label class="name" for="f-slots">편성 슬롯</label>
+                <input class="input" id="f-slots" name="slots" inputmode="numeric" placeholder="—" autocomplete="off" data-send data-num />
+                <button type="button" class="max-btn" data-fill="slots" data-fill-value="max">최대</button>
+              </div>
+              <div class="num-row"><label class="name" for="f-playtime_hours">플레이 시간 (시간)</label>
+                <input class="input" id="f-playtime_hours" name="playtime_hours" inputmode="numeric" placeholder="—" autocomplete="off" data-send data-num />
+                
+              </div>
+              <div class="set-row"><label class="name" for="f-rank_rewards">유저 랭크 보상</label>
+                <select class="input" id="f-rank_rewards" name="rank_rewards" data-send>
+                  <option value="">바꾸지 않음</option>
+                  <option value="claim">받을 수 있는 보상 받음 처리</option>
+                  <option value="fix">잘못 받음 처리 수정</option>
+                </select>
+              </div>
+              <div class="set-row"><label class="name" for="f-medals">냥코 메달</label>
+                <select class="input" id="f-medals" name="medals" data-send>
+                  <option value="">바꾸지 않음</option>
+                  <option value="add">전부 추가</option>
+                  <option value="remove">전부 삭제</option>
+                </select>
+              </div>
+              <div class="set-row"><label class="name" for="f-missions">미션</label>
+                <select class="input" id="f-missions" name="missions" data-send>
+                  <option value="">바꾸지 않음</option>
+                  <option value="reward">달성 (보상 받기 가능)</option>
+                  <option value="claimed">달성 및 보상 받음</option>
+                  <option value="reset">초기화</option>
+                </select>
+              </div>
+              <div class="set-row"><label class="name" for="f-enemy_guide">적 도감</label>
+                <select class="input" id="f-enemy_guide" name="enemy_guide" data-send>
+                  <option value="">바꾸지 않음</option>
+                  <option value="add">전부 등록</option>
+                  <option value="remove">전부 해제</option>
+                </select>
+              </div>
+              <div class="set-row"><label class="name" for="f-gold_pass">골드 회원<small>계정 정지 위험 높음</small></label>
+                <select class="input" id="f-gold_pass" name="gold_pass" data-send>
+                  <option value="">바꾸지 않음</option>
+                  <option value="give">30일 지급</option>
+                  <option value="remove">해지</option>
+                </select>
+              </div>
+              <label class="switch-row"><span class="name">재시작 팩 구매 가능하게</span><span class="switch"><input type="checkbox" name="restart_pack" data-send /><span class="track"></span></span></label>
+              <label class="switch-row"><span class="name">와일드캣 슬롯 · 고양이 스크래처 초기화</span><span class="switch"><input type="checkbox" name="reset_gambling" data-send /><span class="track"></span></span></label>
+              <label class="switch-row"><span class="name">골든 야옹컴 사용 횟수 초기화</span><span class="switch"><input type="checkbox" name="reset_golden_cpu" data-send /><span class="track"></span></span></label>
+              </div>
+            </div>
+          </details>
         </div>
-      </details>
-
-      <details class="fold auto-badge" id="formFold" data-keywords="true form ultra 4th fourth talents guide 제3형태 제4형태 본능 도감 진화">
-        <summary><p class="section-title">형태 · 본능</p><span class="badge hidden" id="formFoldBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
-        <div class="fold-body">
-          <div class="seg" id="formTarget" style="grid-template-columns:1fr 1fr">
-            <button type="button" data-target="all" aria-pressed="true">보유한 모든 캐릭터</button>
-            <button type="button" data-target="picked" aria-pressed="false">선택한 캐릭터 (Lv)</button>
-          </div>
-          <p class="hint" id="formPickedNote" style="margin-top:8px"></p>
-          <div class="set-list">
-          <div class="set-row"><label class="name" for="f-form_true">제3형태</label>
-            <select class="input" id="f-form_true" name="form_true" data-send>
-              <option value="">바꾸지 않음</option>
-              <option value="evolve">진화</option>
-              <option value="force">강제 진화</option>
-              <option value="remove">해제</option>
-            </select>
-          </div>
-          <div class="set-row"><label class="name" for="f-form_fourth">제4형태</label>
-            <select class="input" id="f-form_fourth" name="form_fourth" data-send>
-              <option value="">바꾸지 않음</option>
-              <option value="evolve">진화</option>
-              <option value="force">강제 진화</option>
-              <option value="remove">해제</option>
-            </select>
-          </div>
-          <div class="set-row"><label class="name" for="f-form_talents">본능</label>
-            <select class="input" id="f-form_talents" name="form_talents" data-send>
-              <option value="">바꾸지 않음</option>
-              <option value="max">전부 최대</option>
-              <option value="remove">초기화</option>
-            </select>
-          </div>
-          <div class="set-row"><label class="name" for="f-form_guide">캐릭터 도감</label>
-            <select class="input" id="f-form_guide" name="form_guide" data-send>
-              <option value="">바꾸지 않음</option>
-              <option value="add">등록</option>
-              <option value="remove">해제</option>
-            </select>
-          </div>
-          </div>
-          <p class="hint" style="margin-top:10px">‘진화’는 캐릭터에게 실제로 있는 형태만 적용해요. ‘강제 진화’는 게임에 없는 형태도 설정해서 이상하게 보일 수 있어요. 선택한 캐릭터는 캐릭터 편집의 Lv 버튼으로 골라요.</p>
+      </section>
+      <section class="opt-group" id="grp-fixes" style="--gc:#f87171">
+        <button type="button" class="group-head" aria-expanded="true"><span class="g-dot"></span><span class="g-name">버그 수리</span><span class="g-count hidden"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+        <div class="group-body">
+          <details class="fold auto-badge" id="fixFold" data-keywords="fix repair crash error time 수리 오류 시간">
+            <summary><p class="section-title">수리 도구</p><span class="badge hidden" id="fixFoldBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+            <div class="fold-body">
+              <div class="check-list">
+                <label class="check-row"><input type="checkbox" name="fix_gamatoto" data-send /><span><b>가마토토 오류</b><small>가마토토를 열면 게임이 멈출 때 가마토토 스킨을 초기화해요.</small></span></label>
+                <label class="check-row"><input type="checkbox" name="fix_ototo" data-send /><span><b>오토토 오류</b><small>오토토를 열면 게임이 멈출 때 냥코 대포를 초기화해요 (대포 진행도는 사라져요).</small></span></label>
+                <label class="check-row"><input type="checkbox" name="fix_time" data-send /><span><b>시간 오류</b><small>‘시간 오류’ 메시지와 통솔력·가마토토 타이머 문제를 세이브 시간을 맞춰 고쳐요.</small></span></label>
+                <label class="check-row"><input type="checkbox" name="fix_equip" data-send /><span><b>편성 메뉴</b><small>편성 메뉴가 안 보이면 해금해요.</small></span></label>
+                <label class="check-row"><input type="checkbox" name="fix_officer" data-send /><span><b>사원 명부 오류</b><small>사원 명부 때문에 게임이 멈추면 초기화해요.</small></span></label>
+              </div>
+            </div>
+          </details>
         </div>
-      </details>
-
-      <details class="fold" id="orbFold" data-keywords="talent orbs 본능 구슬">
-        <summary><p class="section-title">본능 구슬</p><span class="badge hidden" id="orbBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
-        <div class="fold-body">
-          <div class="num-row">
-            <label class="name" for="orbCount">종류별 개수</label>
-            <input class="input" id="orbCount" inputmode="numeric" placeholder="—" autocomplete="off" />
-            <button type="button" class="max-btn" id="orbMax">최대</button>
-          </div>
-          <div class="seg" id="orbMode" style="grid-template-columns:1fr 1fr;margin-top:12px">
-            <button type="button" data-mode="all" aria-pressed="true">모든 구슬</button>
-            <button type="button" data-mode="filter" aria-pressed="false">카테고리별</button>
-          </div>
-          <div id="orbFilters" class="hidden" style="margin-top:18px">
-            <p class="sub-title">등급</p>
-            <div class="chip-grid" id="orbGrades"></div>
-            <p class="sub-title">속성</p>
-            <div class="chip-grid" id="orbTraits"></div>
-            <p class="sub-title">효과</p>
-            <div class="chip-grid" id="orbEffects"></div>
-          </div>
-          <p class="hint" id="orbStatus" style="margin-top:12px"></p>
-          <p class="hint" style="margin-top:8px">고른 구슬 종류마다 개수를 정해요 (0이면 없애요). 카테고리마다 버튼을 여러 개 고를 수 있고, 고른 모든 카테고리에 맞는 구슬만 바뀌어요. 비워 둔 카테고리는 전부 포함돼요.</p>
-        </div>
-      </details>
-
-      <details class="fold item-fold" id="fruitFold" data-keywords="catfruit seeds 개다래 씨앗 열매" data-group="fruit">
-        <summary><p class="section-title">개다래 열매 · 씨앗</p><span class="badge hidden" id="fruitBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
-        <div class="fold-body">
-          <div class="num-row">
-            <label class="name" for="fruitCount">종류별 개수</label>
-            <input class="input" id="fruitCount" inputmode="numeric" placeholder="—" autocomplete="off" />
-            <button type="button" class="max-btn" data-item-max="fruit">최대</button>
-          </div>
-          <div class="seg item-mode" data-group="fruit" style="grid-template-columns:1fr 1fr;margin-top:12px">
-            <button type="button" data-mode="all" aria-pressed="true">모든 종류</button>
-            <button type="button" data-mode="pick" aria-pressed="false">종류 고르기</button>
-          </div>
-          <div class="hidden" id="fruitPicks" style="margin-top:18px"></div>
-          <p class="hint" id="fruitStatus" style="margin-top:12px"></p>
-          <p class="hint" id="fruitHint" style="margin-top:8px"></p>
-        </div>
-      </details>
-
-      <details class="fold item-fold" id="stoneFold" data-keywords="behemoth stones gems crystals 수석 결정" data-group="stone">
-        <summary><p class="section-title">수석 · 결정</p><span class="badge hidden" id="stoneBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
-        <div class="fold-body">
-          <div class="num-row">
-            <label class="name" for="stoneCount">종류별 개수</label>
-            <input class="input" id="stoneCount" inputmode="numeric" placeholder="—" autocomplete="off" />
-            <button type="button" class="max-btn" data-item-max="stone">최대</button>
-          </div>
-          <div class="seg item-mode" data-group="stone" style="grid-template-columns:1fr 1fr;margin-top:12px">
-            <button type="button" data-mode="all" aria-pressed="true">모든 종류</button>
-            <button type="button" data-mode="pick" aria-pressed="false">종류 고르기</button>
-          </div>
-          <div class="hidden" id="stonePicks" style="margin-top:18px"></div>
-          <p class="hint" id="stoneStatus" style="margin-top:12px"></p>
-          <p class="hint" id="stoneHint" style="margin-top:8px"></p>
-        </div>
-      </details>
-
-      <details class="fold item-fold" id="eyeFold" data-keywords="catseyes 캣츠아이" data-group="eye">
-        <summary><p class="section-title">캣츠아이</p><span class="badge hidden" id="eyeBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
-        <div class="fold-body">
-          <div class="num-row">
-            <label class="name" for="eyeCount">종류별 개수</label>
-            <input class="input" id="eyeCount" inputmode="numeric" placeholder="—" autocomplete="off" />
-            <button type="button" class="max-btn" data-item-max="eye">최대</button>
-          </div>
-          <div class="seg item-mode" data-group="eye" style="grid-template-columns:1fr 1fr;margin-top:12px">
-            <button type="button" data-mode="all" aria-pressed="true">모든 종류</button>
-            <button type="button" data-mode="pick" aria-pressed="false">종류 고르기</button>
-          </div>
-          <div class="hidden" id="eyePicks" style="margin-top:18px"></div>
-          <p class="hint" id="eyeStatus" style="margin-top:12px"></p>
-          <p class="hint" id="eyeHint" style="margin-top:8px"></p>
-        </div>
-      </details>
-
-      <details class="fold item-fold" id="battleFold" data-keywords="battle items speed up treasure radar endless 배틀 아이템 무제한" data-group="battle">
-        <summary><p class="section-title">배틀 아이템</p><span class="badge hidden" id="battleBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
-        <div class="fold-body">
-          <div class="num-row">
-            <label class="name" for="battleCount">종류별 개수</label>
-            <input class="input" id="battleCount" inputmode="numeric" placeholder="—" autocomplete="off" />
-            <button type="button" class="max-btn" data-item-max="battle">최대</button>
-          </div>
-          <div class="seg item-mode" data-group="battle" style="grid-template-columns:1fr 1fr;margin-top:12px">
-            <button type="button" data-mode="all" aria-pressed="true">모든 종류</button>
-            <button type="button" data-mode="pick" aria-pressed="false">종류 고르기</button>
-          </div>
-          <div class="hidden" id="battlePicks" style="margin-top:18px"></div>
-          <div class="num-row" style="margin-top:14px"><label class="name" for="endlessSel">무제한 사용 (이 종류에)</label>
-            <select class="input" id="endlessSel">
-              <option value="">바꾸지 않음</option>
-              <option value="60">1시간</option>
-              <option value="1440">1일</option>
-              <option value="10080">7일</option>
-              <option value="43200">30일</option>
-              <option value="inf">무한</option>
-            </select>
-          </div>
-          <p class="hint" id="battleStatus" style="margin-top:12px"></p>
-          <p class="hint" id="battleHint" style="margin-top:8px"></p>
-        </div>
-      </details>
-
-      <details class="fold item-fold" id="drinkFold" data-keywords="catamins 고양이 드링크" data-group="drink">
-        <summary><p class="section-title">고양이 드링크</p><span class="badge hidden" id="drinkBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
-        <div class="fold-body">
-          <div class="num-row">
-            <label class="name" for="drinkCount">종류별 개수</label>
-            <input class="input" id="drinkCount" inputmode="numeric" placeholder="—" autocomplete="off" />
-            <button type="button" class="max-btn" data-item-max="drink">최대</button>
-          </div>
-          <div class="seg item-mode" data-group="drink" style="grid-template-columns:1fr 1fr;margin-top:12px">
-            <button type="button" data-mode="all" aria-pressed="true">모든 종류</button>
-            <button type="button" data-mode="pick" aria-pressed="false">종류 고르기</button>
-          </div>
-          <div class="hidden" id="drinkPicks" style="margin-top:18px"></div>
-          <p class="hint" id="drinkStatus" style="margin-top:12px"></p>
-          <p class="hint" id="drinkHint" style="margin-top:8px"></p>
-        </div>
-      </details>
-
-      <details class="fold item-fold" id="chestFold" data-keywords="treasure chests 보물 상자" data-group="chest">
-        <summary><p class="section-title">보물 상자</p><span class="badge hidden" id="chestBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
-        <div class="fold-body">
-          <div class="num-row">
-            <label class="name" for="chestCount">종류별 개수</label>
-            <input class="input" id="chestCount" inputmode="numeric" placeholder="—" autocomplete="off" />
-            <button type="button" class="max-btn" data-item-max="chest">최대</button>
-          </div>
-          <div class="seg item-mode" data-group="chest" style="grid-template-columns:1fr 1fr;margin-top:12px">
-            <button type="button" data-mode="all" aria-pressed="true">모든 종류</button>
-            <button type="button" data-mode="pick" aria-pressed="false">종류 고르기</button>
-          </div>
-          <div class="hidden" id="chestPicks" style="margin-top:18px"></div>
-          <p class="hint" id="chestStatus" style="margin-top:12px"></p>
-          <p class="hint" id="chestHint" style="margin-top:8px"></p>
-        </div>
-      </details>
-
-      <details class="fold item-fold" id="materialFold" data-keywords="base materials bricks 성 재료 벽돌" data-group="material">
-        <summary><p class="section-title">성 재료</p><span class="badge hidden" id="materialBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
-        <div class="fold-body">
-          <div class="num-row">
-            <label class="name" for="materialCount">종류별 개수</label>
-            <input class="input" id="materialCount" inputmode="numeric" placeholder="—" autocomplete="off" />
-            <button type="button" class="max-btn" data-item-max="material">최대</button>
-          </div>
-          <div class="seg item-mode" data-group="material" style="grid-template-columns:1fr 1fr;margin-top:12px">
-            <button type="button" data-mode="all" aria-pressed="true">모든 종류</button>
-            <button type="button" data-mode="pick" aria-pressed="false">종류 고르기</button>
-          </div>
-          <div class="hidden" id="materialPicks" style="margin-top:18px"></div>
-          <p class="hint" id="materialStatus" style="margin-top:12px"></p>
-          <p class="hint" id="materialHint" style="margin-top:8px"></p>
-        </div>
-      </details>
-
-      <details class="fold item-fold" id="medalFold" data-keywords="labyrinth medals 미궁 메달 훈장" data-group="medal">
-        <summary><p class="section-title">미궁 훈장</p><span class="badge hidden" id="medalBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
-        <div class="fold-body">
-          <div class="num-row">
-            <label class="name" for="medalCount">종류별 개수</label>
-            <input class="input" id="medalCount" inputmode="numeric" placeholder="—" autocomplete="off" />
-            <button type="button" class="max-btn" data-item-max="medal">최대</button>
-          </div>
-          <div class="seg item-mode" data-group="medal" style="grid-template-columns:1fr 1fr;margin-top:12px">
-            <button type="button" data-mode="all" aria-pressed="true">모든 종류</button>
-            <button type="button" data-mode="pick" aria-pressed="false">종류 고르기</button>
-          </div>
-          <div class="hidden" id="medalPicks" style="margin-top:18px"></div>
-          <p class="hint" id="medalStatus" style="margin-top:12px"></p>
-          <p class="hint" id="medalHint" style="margin-top:8px"></p>
-        </div>
-      </details>
-
-      <details class="fold auto-badge" id="skillFold" data-keywords="special skills cat cannon power up 특수 능력 냥코 대포 파워업 강화">
-        <summary><p class="section-title">특수 능력 (기지 강화)</p><span class="badge hidden" id="skillFoldBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
-        <div class="fold-body">
-          <div class="num-row"><label class="name" for="f-skill_level">레벨</label>
-            <input class="input" id="f-skill_level" name="skill_level" autocomplete="off" placeholder="예: 최대+최대" data-send style="width:140px" />
-          </div>
-          <div class="seg" id="skillMode" style="grid-template-columns:1fr 1fr;margin-top:12px">
-            <button type="button" data-mode="all" aria-pressed="true">모든 능력</button>
-            <button type="button" data-mode="pick" aria-pressed="false">능력 고르기</button>
-          </div>
-          <div class="chip-grid hidden" id="skillPicks" style="margin-top:14px"></div>
-          <p class="hint" id="skillStatus" style="margin-top:10px"></p>
-          <p class="hint" style="margin-top:6px">20+10처럼 레벨+플러스를 입력하거나 최대+최대를 입력하세요. 능력마다 최대치까지만 올라가요 (버튼에 마우스를 올리면 보여요).</p>
-        </div>
-      </details>
-
-      <details class="fold auto-badge" id="ototoFold" data-keywords="ototo cat cannon engineers 오토토 냥코 대포 조수 기술자">
-        <summary><p class="section-title">오토토 · 냥코 대포</p><span class="badge hidden" id="ototoFoldBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
-        <div class="fold-body">
-          <div class="num-row"><label class="name" for="f-engineers">조수</label>
-            <input class="input" id="f-engineers" name="engineers" inputmode="numeric" placeholder="—" autocomplete="off" data-send data-num />
-            <button type="button" class="max-btn" data-fill="engineers" data-fill-value="engineers_max">최대</button>
-          </div>
-          <div style="margin-top:14px">          <label class="switch-row"><span class="name">모든 냥코 대포 최대 강화 (모든 부품)</span><span class="switch"><input type="checkbox" name="max_cannons" data-send /><span class="track"></span></span></label></div>
-          <p class="hint" style="margin-top:10px">대포를 만드는 성 재료는 아래 성 재료 영역에서 정해요.</p>
-        </div>
-      </details>
-
-      <details class="fold auto-badge" id="gamaFold" data-keywords="gamatoto helpers cat shrine 가마토토 대원 고양이 신사">
-        <summary><p class="section-title">가마토토 · 고양이 신사</p><span class="badge hidden" id="gamaFoldBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
-        <div class="fold-body">
-          <div class="stat-grid">
-            <div class="stat"><label for="f-gama_level">가마토토 레벨</label><div class="stat-in"><input class="input" id="f-gama_level" name="gama_level" inputmode="numeric" placeholder="—" data-send data-num /><button type="button" class="max-btn" data-fill="gama_level" data-fill-value="gamatoto_max">최대</button></div></div>
-            <div class="stat"><label for="f-shrine_level">고양이 신사 레벨</label><div class="stat-in"><input class="input" id="f-shrine_level" name="shrine_level" inputmode="numeric" placeholder="—" data-send data-num /><button type="button" class="max-btn" data-fill="shrine_level" data-fill-value="shrine_max">최대</button></div></div>
-          </div>
-          <p class="sub-title">가마토토 대원 <span id="helperRoom" class="hint"></span></p>
-          <div class="helper-grid" id="helperGrid"></div>
-          <div style="margin-top:14px">          <label class="switch-row"><span class="name">고양이 신사 다시 나타나게 하기</span><span class="switch"><input type="checkbox" name="shrine_show" data-send /><span class="track"></span></span></label></div>
-          <p class="hint" style="margin-top:10px">대원: 등급별 인원 수를 정해요 (전체 인원은 팀 크기를 넘을 수 없어요).</p>
-        </div>
-      </details>
-
-      <details class="fold" id="stageFold" data-keywords="stages story legend treasures uncanny zero event collab gauntlet tower 스테이지 스토리 레전드 보물 이벤트 콜라보 건틀렛 탑">
-        <summary><p class="section-title">스테이지</p><span class="badge hidden" id="stageBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
-        <div class="fold-body">
-        <p class="sub-title">스토리</p>
-        <div class="seg cols3" id="chapters">
-          <button type="button" data-ch="0" aria-pressed="false" title="세계편 제1장">세계편 1장</button>
-          <button type="button" data-ch="1" aria-pressed="false" title="세계편 제2장">세계편 2장</button>
-          <button type="button" data-ch="2" aria-pressed="false" title="세계편 제3장">세계편 3장</button>
-          <button type="button" data-ch="3" aria-pressed="false" title="미래편 제1장">미래편 1장</button>
-          <button type="button" data-ch="4" aria-pressed="false" title="미래편 제2장">미래편 2장</button>
-          <button type="button" data-ch="5" aria-pressed="false" title="미래편 제3장">미래편 3장</button>
-          <button type="button" data-ch="6" aria-pressed="false" title="우주편 제1장">우주편 1장</button>
-          <button type="button" data-ch="7" aria-pressed="false" title="우주편 제2장">우주편 2장</button>
-          <button type="button" data-ch="8" aria-pressed="false" title="우주편 제3장">우주편 3장</button>
-        </div>
-        <button type="button" class="link-btn" id="chAll">전체 선택</button>
-        <label class="switch-row" style="margin-top:14px"><span class="name"><svg class="i16"><use href="#i-flag"/></svg> 선택한 챕터 클리어</span><span class="switch"><input type="checkbox" name="clear_story" data-stage-edit /><span class="track"></span></span></label>
-        <div class="switch-row" style="margin-top:14px"><label class="name" for="treasureLevel"><svg class="i16"><use href="#i-gem"/></svg> 보물</label>
-          <select class="input" id="treasureLevel" name="treasure_level">
-            <option value="">바꾸지 않음</option>
-            <option value="0">없음</option>
-            <option value="1">조잡한</option>
-            <option value="2">평범한</option>
-            <option value="3">최고급</option>
-          </select>
-        </div>
-        <p class="hint" style="margin-top:12px">뒤 챕터를 클리어하면 필요한 앞 챕터도 함께 클리어해요. 보물은 선택한 챕터의 48개 스테이지 전체에 적용돼요.</p>
-
-        <p class="sub-title">레전드 · 이벤트</p>
-          <label class="switch-row"><span class="name">레전드 스토리</span><span class="switch"><input type="checkbox" name="clear_legend" data-stage-edit /><span class="track"></span></span></label>
-          <label class="switch-row"><span class="name">신 레전드 스토리</span><span class="switch"><input type="checkbox" name="clear_uncanny" data-stage-edit /><span class="track"></span></span></label>
-          <label class="switch-row"><span class="name">레전드 스토리 0</span><span class="switch"><input type="checkbox" name="clear_zero" data-stage-edit /><span class="track"></span></span></label>
-          <label class="switch-row"><span class="name">이벤트 스테이지</span><span class="switch"><input type="checkbox" name="clear_event" data-stage-edit /><span class="track"></span></span></label>
-          <label class="switch-row"><span class="name">콜라보 스테이지</span><span class="switch"><input type="checkbox" name="clear_collab" data-stage-edit /><span class="track"></span></span></label>
-        <p class="sub-title">그 외 스테이지</p>
-        <div class="toggle-chips">
-          <label><input type="checkbox" name="clear_gauntlet" data-stage-edit /><span>건틀렛</span></label>
-          <label><input type="checkbox" name="clear_collab_gauntlet" data-stage-edit /><span>콜라보 건틀렛</span></label>
-          <label><input type="checkbox" name="clear_behemoth" data-stage-edit /><span>거대 수석 사냥</span></label>
-          <label><input type="checkbox" name="clear_enigma" data-stage-edit /><span>수수께끼 스테이지</span></label>
-          <label><input type="checkbox" name="clear_tower" data-stage-edit /><span>탑</span></label>
-          <label><input type="checkbox" name="clear_legend_quest" data-stage-edit /><span>레전드 퀘스트</span></label>
-          <label><input type="checkbox" name="clear_catamin_stage" data-stage-edit /><span>고양이 드링크 스테이지</span></label>
-          <label><input type="checkbox" name="clear_catclaw" data-stage-edit /><span>냥코 도장 랭킹전</span></label>
-        </div>
-        <div class="switch-row" style="margin-top:14px"><label class="name" for="mapCrowns"><svg class="i16"><use href="#i-crown"/></svg> 크라운</label>
-          <select class="input" id="mapCrowns" name="map_crowns">
-            <option value="0">최대</option>
-            <option value="1">1개</option>
-            <option value="2">2개</option>
-            <option value="3">3개</option>
-            <option value="4">4개</option>
-          </select>
-        </div>
-        <p class="hint" style="margin-top:12px">게임 버전에 있는 모든 맵을 고른 크라운 수까지 클리어해요. 기존 클리어 횟수는 그대로예요.</p>
-        </div>
-      </details>
-
-      <details class="fold auto-badge" id="specialFold" data-keywords="aku outbreaks zombie filibuster challenge dojo score itf 악마 좀비 필리버스터 챌린지 도장 점수">
-        <summary><p class="section-title">특수 스테이지 · 점수</p><span class="badge hidden" id="specialFoldBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
-        <div class="fold-body">
-          <div class="set-list">
-          <label class="switch-row"><span class="name">악마 영역 해금</span><span class="switch"><input type="checkbox" name="aku_realm" data-send /><span class="track"></span></span></label>
-          <label class="switch-row"><span class="name">악마편 클리어</span><span class="switch"><input type="checkbox" name="aku_chapters" data-send /><span class="track"></span></span></label>
-          <label class="switch-row"><span class="name">좀비 습격 클리어</span><span class="switch"><input type="checkbox" name="outbreaks" data-send /><span class="track"></span></span></label>
-          <label class="switch-row"><span class="name">필리버스터 스테이지 재클리어</span><span class="switch"><input type="checkbox" name="filibuster" data-send /><span class="track"></span></span></label>
-          </div>
-          <p class="sub-title">점수</p>
-          <div class="num-row"><label class="name" for="f-score_challenge">챌린지 배틀 점수</label>
-            <input class="input" id="f-score_challenge" name="score_challenge" inputmode="numeric" placeholder="—" autocomplete="off" data-send data-num />
-            
-          </div>
-          <div class="num-row"><label class="name" for="f-score_dojo">도장 점수</label>
-            <input class="input" id="f-score_dojo" name="score_dojo" inputmode="numeric" placeholder="—" autocomplete="off" data-send data-num />
-            
-          </div>
-          <div class="num-row"><label class="name" for="f-score_itf">미래편 타임 스코어</label>
-            <input class="input" id="f-score_itf" name="score_itf" inputmode="numeric" placeholder="—" autocomplete="off" data-send data-num />
-            
-          </div>
-        </div>
-      </details>
-
-      <details class="fold auto-badge" id="progressFold" data-keywords="lineup slots playtime rank rewards medals missions enemy guide gold pass 편성 슬롯 플레이 시간 랭크 보상 메달 미션 적 도감 골드 회원">
-        <summary><p class="section-title">진행 · 계정</p><span class="badge hidden" id="progressFoldBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
-        <div class="fold-body">
-          <div class="set-list">
-          <div class="num-row"><label class="name" for="f-slots">편성 슬롯</label>
-            <input class="input" id="f-slots" name="slots" inputmode="numeric" placeholder="—" autocomplete="off" data-send data-num />
-            <button type="button" class="max-btn" data-fill="slots" data-fill-value="max">최대</button>
-          </div>
-          <div class="num-row"><label class="name" for="f-playtime_hours">플레이 시간 (시간)</label>
-            <input class="input" id="f-playtime_hours" name="playtime_hours" inputmode="numeric" placeholder="—" autocomplete="off" data-send data-num />
-            
-          </div>
-          <div class="set-row"><label class="name" for="f-rank_rewards">유저 랭크 보상</label>
-            <select class="input" id="f-rank_rewards" name="rank_rewards" data-send>
-              <option value="">바꾸지 않음</option>
-              <option value="claim">받을 수 있는 보상 받음 처리</option>
-              <option value="fix">잘못 받음 처리 수정</option>
-            </select>
-          </div>
-          <div class="set-row"><label class="name" for="f-medals">냥코 메달</label>
-            <select class="input" id="f-medals" name="medals" data-send>
-              <option value="">바꾸지 않음</option>
-              <option value="add">전부 추가</option>
-              <option value="remove">전부 삭제</option>
-            </select>
-          </div>
-          <div class="set-row"><label class="name" for="f-missions">미션</label>
-            <select class="input" id="f-missions" name="missions" data-send>
-              <option value="">바꾸지 않음</option>
-              <option value="reward">달성 (보상 받기 가능)</option>
-              <option value="claimed">달성 및 보상 받음</option>
-              <option value="reset">초기화</option>
-            </select>
-          </div>
-          <div class="set-row"><label class="name" for="f-enemy_guide">적 도감</label>
-            <select class="input" id="f-enemy_guide" name="enemy_guide" data-send>
-              <option value="">바꾸지 않음</option>
-              <option value="add">전부 등록</option>
-              <option value="remove">전부 해제</option>
-            </select>
-          </div>
-          <div class="set-row"><label class="name" for="f-gold_pass">골드 회원<small>계정 정지 위험 높음</small></label>
-            <select class="input" id="f-gold_pass" name="gold_pass" data-send>
-              <option value="">바꾸지 않음</option>
-              <option value="give">30일 지급</option>
-              <option value="remove">해지</option>
-            </select>
-          </div>
-          <label class="switch-row"><span class="name">재시작 팩 구매 가능하게</span><span class="switch"><input type="checkbox" name="restart_pack" data-send /><span class="track"></span></span></label>
-          <label class="switch-row"><span class="name">와일드캣 슬롯 · 고양이 스크래처 초기화</span><span class="switch"><input type="checkbox" name="reset_gambling" data-send /><span class="track"></span></span></label>
-          <label class="switch-row"><span class="name">골든 야옹컴 사용 횟수 초기화</span><span class="switch"><input type="checkbox" name="reset_golden_cpu" data-send /><span class="track"></span></span></label>
-          </div>
-        </div>
-      </details>
-
-      <details class="fold auto-badge" id="fixFold" data-keywords="fix repair crash error time 수리 오류 시간">
-        <summary><p class="section-title">수리 도구</p><span class="badge hidden" id="fixFoldBadge"></span><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
-        <div class="fold-body">
-          <div class="check-list">
-            <label class="check-row"><input type="checkbox" name="fix_gamatoto" data-send /><span><b>가마토토 오류</b><small>가마토토를 열면 게임이 멈출 때 가마토토 스킨을 초기화해요.</small></span></label>
-            <label class="check-row"><input type="checkbox" name="fix_ototo" data-send /><span><b>오토토 오류</b><small>오토토를 열면 게임이 멈출 때 냥코 대포를 초기화해요 (대포 진행도는 사라져요).</small></span></label>
-            <label class="check-row"><input type="checkbox" name="fix_time" data-send /><span><b>시간 오류</b><small>‘시간 오류’ 메시지와 통솔력·가마토토 타이머 문제를 세이브 시간을 맞춰 고쳐요.</small></span></label>
-            <label class="check-row"><input type="checkbox" name="fix_equip" data-send /><span><b>편성 메뉴</b><small>편성 메뉴가 안 보이면 해금해요.</small></span></label>
-            <label class="check-row"><input type="checkbox" name="fix_officer" data-send /><span><b>사원 명부 오류</b><small>사원 명부 때문에 게임이 멈추면 초기화해요.</small></span></label>
-          </div>
-        </div>
-      </details>
+      </section>
+      </div>
 
       <div id="safetyBlock">
         <p class="section-title">안전</p>
@@ -973,6 +1051,7 @@
     <span class="pending" id="pendingText">설정한 편집 없음</span>
     <button type="button" class="btn btn-outline bar-btn" id="toTop" aria-label="맨 위로">↑</button>
     <button class="btn btn-outline bar-btn" type="button" id="reset">편집 초기화</button>
+    <button class="btn btn-outline bar-btn hidden" type="button" id="cancelEdit">편집 취소</button>
     <button class="btn btn-primary bar-main" type="submit" id="submit"><span id="submitLabel">편집 &amp; 업로드</span></button>
   </div>
 </div>
@@ -1401,6 +1480,140 @@
 
   // ---- navigation: search options, collapse all, fixed action bar with a pending-edits count ----
   const folds = () => [...document.querySelectorAll("aside details.fold")];
+
+  // ---- option groups, the "edits to be saved" summary and per-section clearing ----
+  const S = {"sum_title": "저장될 편집", "sum_empty": "아직 설정한 편집이 없어요. 옵션에서 편집을 고르면 저장하기 전에 여기에 모두 표시돼요.", "sum_hint": "편집을 누르면 해당 옵션으로 이동하고, ×를 누르면 삭제돼요.", "add": "추가", "remove": "삭제", "rarity": "등급 추가", "level": "레벨", "all_owned": "보유 캐릭터 전체", "picked": "고른 캐릭터 {n}개", "applies": "대상", "each": "각 {v}개", "helpers": "대원", "story_clear": "스토리 클리어", "clear": "클리어", "crowns_max": "최대 크라운", "crowns": "크라운 {n}개", "more": "외 {n}개", "safety": "안전", "remove_edit": "삭제", "cancel": "편집 취소", "cancelling": "취소하는 중…", "cancel_failed": "취소하지 못했어요. 편집이 방금 끝났을 수 있어요.", "jump": "그룹으로 이동"};
+  var groups = [...document.querySelectorAll(".opt-group")];
+  function openGroup(g) { g.classList.remove("closed"); g.querySelector(".group-head").setAttribute("aria-expanded", "true"); }
+  groups.forEach(g => g.querySelector(".group-head").addEventListener("click", () => {
+    const closed = g.classList.toggle("closed");
+    g.querySelector(".group-head").setAttribute("aria-expanded", String(!closed));
+  }));
+  const jumpBar = $("groupJump");   // fade the right edge only while more buttons are hidden there
+  const jumpEdge = () => jumpBar.classList.toggle("at-end", jumpBar.scrollLeft + jumpBar.clientWidth >= jumpBar.scrollWidth - 2);
+  jumpBar.addEventListener("scroll", jumpEdge); window.addEventListener("resize", jumpEdge); setTimeout(jumpEdge, 0);
+  document.querySelectorAll("#groupJump button").forEach(b => b.addEventListener("click", () => {
+    const g = $("grp-" + b.dataset.g); openGroup(g); g.scrollIntoView({ behavior: "smooth", block: "start" });
+  }));
+  function openFold(f) {
+    const g = f.closest(".opt-group"); if (g) openGroup(g);
+    if (f.tagName === "DETAILS") f.open = true;
+    f.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  const clean = (el) => { if (!el) return ""; const c = el.cloneNode(true); c.querySelectorAll("small, svg").forEach(x => x.remove()); return c.textContent.replace(/\s+/g, " ").trim(); };
+  function labelOf(el) {
+    if (el.id) { const l = document.querySelector(`label[for="${el.id}"]`); if (l) return clean(l); }
+    const row = el.closest("label");
+    return row ? clean(row.querySelector(".name, b, span:not(.switch):not(.track)") || row) : "";
+  }
+  const few = (a) => a.slice(0, 4).join(", ") + (a.length > 4 ? " " + S.more.replace("{n}", a.length - 4) : "");
+  const statusOf = (id) => ($(id) ? $(id).textContent.trim() : "");
+  const withStatus = (text, id) => statusOf(id) ? `${text} · ${statusOf(id)}` : text;
+  const SKIP = new Set(["catSearch", "levelInput", "orbCount", "endlessSel", "treasureLevel", "mapCrowns", "f-skill_level"]);
+  function describe(f) {
+    const lines = [];
+    f.querySelectorAll("input, select").forEach(el => {
+      if (SKIP.has(el.id) || /Count$/.test(el.id) || el.closest("#helperGrid") || el.type === "file" || "stageEdit" in el.dataset) return;
+      if (el.type === "checkbox") { if (el.checked) lines.push(labelOf(el)); }
+      else if (el.tagName === "SELECT") { if (el.selectedIndex > 0) lines.push(`${labelOf(el)}: ${clean(el.options[el.selectedIndex])}`); }
+      else if (el.value.trim()) lines.push(`${labelOf(el)}: ${el.value.trim()}`);
+    });
+    const target = (t) => t === "picked" ? S.picked.replace("{n}", catPick.level.size) : S.all_owned;
+    if (f.id === "catFold") {
+      if (catPick.add.size) lines.push(`${S.add}: ${few([...catPick.add.values()])}`);
+      if (catPick.remove.size) lines.push(`${S.remove}: ${few([...catPick.remove.values()])}`);
+      const r = rarityBtns.filter(b => b.getAttribute("aria-pressed") === "true").map(clean);
+      if (r.length) lines.push(`${S.rarity}: ${r.join(", ")}`);
+      const lv = $("levelInput").value.trim();
+      if (lv) lines.push(`${S.level} ${lv} · ${target(levelTarget)}`);
+    }
+    if (f.id === "formFold" && lines.length) lines.push(`${S.applies}: ${target(formTarget)}`);
+    if (f.id === "orbFold" && $("orbCount").value.trim()) lines.unshift(withStatus(S.each.replace("{v}", $("orbCount").value.trim()), "orbStatus"));
+    if (f.dataset.group && $(f.dataset.group + "Count")) {
+      const g = f.dataset.group, v = $(g + "Count").value.trim();
+      if (v) lines.unshift(withStatus(S.each.replace("{v}", v), g + "Status"));
+      if (g === "battle" && $("endlessSel").value) lines.push(`${labelOf($("endlessSel"))}: ${clean($("endlessSel").selectedOptions[0])}`);
+    }
+    if (f.id === "skillFold" && $("f-skill_level").value.trim()) lines.unshift(withStatus(`${labelOf($("f-skill_level"))} ${$("f-skill_level").value.trim()}`, "skillStatus"));
+    if (f.id === "gamaFold") {
+      const h = [...document.querySelectorAll("#helperGrid input")].filter(i => +i.value > 0).map(i => `${labelOf(i)} ${i.value}`);
+      if (h.length) lines.push(`${S.helpers}: ${h.join(", ")}`);
+    }
+    if (f.id === "stageFold") {
+      const ch = [...document.querySelectorAll("#chapters button")].filter(b => b.getAttribute("aria-pressed") === "true").map(b => b.textContent.trim());
+      if (form.clear_story.checked) lines.push(`${S.story_clear}: ${ch.join(", ") || "—"}`);
+      if ($("treasureLevel").value !== "") lines.push(`${labelOf($("treasureLevel"))}: ${clean($("treasureLevel").selectedOptions[0])} (${ch.join(", ") || "—"})`);
+      const maps = [...f.querySelectorAll("input[data-stage-edit]:checked")].filter(c => c.name !== "clear_story").map(labelOf);
+      if (maps.length) lines.push(`${S.clear}: ${maps.join(", ")} · ${$("mapCrowns").value === "0" ? S.crowns_max : S.crowns.replace("{n}", $("mapCrowns").value)}`);
+    }
+    return lines.filter(Boolean);
+  }
+  function collectEdits() {
+    return groups.map(g => {
+      const rows = [...g.querySelectorAll("details.fold")].map(f => ({ f, title: clean(f.querySelector(".section-title")), lines: describe(f) })).filter(r => r.lines.length);
+      if (g.id === "grp-account" && mode === "codes" && form.new_account.checked) rows.push({ f: $("safetyBlock"), title: S.safety, lines: [labelOf(form.new_account)] });
+      return { g, rows };
+    }).filter(d => d.rows.length);
+  }
+  function clearFold(f) {
+    if (f.id === "safetyBlock") { form.new_account.checked = false; return; }
+    f.querySelectorAll("input, select").forEach(el => {
+      if (el.id === "catSearch") return;
+      if (el.type === "checkbox") el.checked = false; else if (el.tagName === "SELECT") el.selectedIndex = 0; else el.value = "";
+    });
+    if (f.id === "catFold") {
+      catPick.add.clear(); catPick.remove.clear();
+      if (formTarget !== "picked") catPick.level.clear();   // the Lv picks are still used by Forms & talents
+      setLevelTarget("all"); rarityBtns.forEach(b => b.setAttribute("aria-pressed", "false"));
+      renderCatChips(); renderCatResults();
+    }
+    if (f.id === "formFold") setFormTarget("all");
+    if (f.id === "orbFold") { f.querySelectorAll(".chip-grid button").forEach(b => b.setAttribute("aria-pressed", "false")); setOrbMode("all"); }
+    if (f.id === "skillFold") { f.querySelectorAll("#skillPicks button").forEach(b => b.setAttribute("aria-pressed", "false")); document.querySelector('#skillMode button[data-mode="all"]').click(); }
+    if (f.id === "stageFold") document.querySelectorAll("#chapters button").forEach(b => b.setAttribute("aria-pressed", "false"));
+    if (f.dataset.group) setItemMode(f.dataset.group, "all");
+    f.querySelectorAll("input, select").forEach(el => { if (el.id !== "catSearch") el.dispatchEvent(new Event(el.tagName === "SELECT" || el.type === "checkbox" ? "change" : "input", { bubbles: true })); });
+    ITEM_GROUPS.forEach(g => updateItemStatus(g)); updateStageBadge(); updateCatBadge(); updateExtras();
+  }
+  var lastSig = "";
+  function updatePending() {
+    if (!groups) return;   // called before this block ran
+    const data = collectEdits();
+    const sections = data.flatMap(d => d.rows.map(r => r.title)), total = sections.length;
+    const short = total ? xText.pending.replace("{n}", total).replace("{s}", total === 1 ? "" : "s")
+      .replace("{sections}", sections.slice(0, 3).join(", ") + (sections.length > 3 ? " …" : "")) : xText.none;
+    $("pendingText").innerHTML = short; $("sumShort").innerHTML = short;
+    groups.forEach(g => {
+      const d = data.find(x => x.g === g), n = d ? d.rows.length : 0;
+      [g.querySelector(".group-head .g-count"), document.querySelector(`#groupJump [data-g="${g.id.slice(4)}"] .g-count`)]
+        .forEach(el => { el.textContent = n; el.classList.toggle("hidden", !n); });
+    });
+    const sig = JSON.stringify(data.map(d => [d.g.id, d.rows.map(r => [r.f.id, r.lines])]));
+    if (sig === lastSig) return;
+    lastSig = sig;
+    const list = $("sumList"); list.innerHTML = "";
+    data.forEach(d => {
+      const gc = d.g.style.getPropertyValue("--gc");
+      const head = document.createElement("li"); head.className = "sum-group"; head.style.setProperty("--gc", gc);
+      head.innerHTML = '<span class="g-dot"></span><span></span>'; head.lastChild.textContent = d.g.querySelector(".g-name").textContent;
+      list.appendChild(head);
+      d.rows.forEach(r => {
+        const li = document.createElement("li"); li.className = "sum-row"; li.style.setProperty("--gc", gc);
+        li.innerHTML = '<button type="button" class="sum-open"><span class="sum-title"></span><span class="sum-lines"></span></button><button type="button" class="sum-x">×</button>';
+        li.querySelector(".sum-title").textContent = r.title;
+        r.lines.forEach(t => { const sp = document.createElement("span"); sp.textContent = t; li.querySelector(".sum-lines").appendChild(sp); });
+        li.querySelector(".sum-x").setAttribute("aria-label", `${S.remove_edit}: ${r.title}`);
+        li.querySelector(".sum-open").addEventListener("click", () => openFold(r.f));
+        li.querySelector(".sum-x").addEventListener("click", () => { clearFold(r.f); updatePending(); });
+        list.appendChild(li);
+      });
+    });
+    $("sumEmpty").classList.toggle("hidden", total > 0); $("sumHint").classList.toggle("hidden", !total);
+  }
+  const refreshSoon = () => setTimeout(updatePending, 0);
+  form.addEventListener("input", refreshSoon); form.addEventListener("change", refreshSoon); document.addEventListener("click", refreshSoon);
+  setInterval(updatePending, 1500);   // catalogs load and update statuses on their own schedule
+  setTimeout(updatePending, 0);
   $("optSearch").addEventListener("input", () => {
     const q = $("optSearch").value.trim().toLowerCase();
     let shown = 0;
@@ -1409,26 +1622,17 @@
       f.classList.toggle("hidden", !hit);
       if (q && hit) { f.open = true; shown++; }
     });
+    groups.forEach(g => {
+      const any = [...g.querySelectorAll("details.fold")].some(f => !f.classList.contains("hidden"));
+      g.classList.toggle("hidden", !!q && !any);
+      document.querySelector(`#groupJump [data-g="${g.id.slice(4)}"]`).classList.toggle("hidden", !!q && !any);
+      if (q && any) openGroup(g);
+    });
     $("searchEmpty").classList.toggle("hidden", !q || shown > 0);
   });
   $("optSearch").addEventListener("keydown", (e) => { if (e.key === "Enter") e.preventDefault(); });
   $("collapseAll").addEventListener("click", () => folds().forEach(f => f.open = false));
   $("toTop").addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
-  function updatePending() {
-    const sections = [];
-    folds().forEach(f => {
-      const badge = f.querySelector(":scope > summary .badge");
-      const title = f.querySelector(":scope > summary .section-title").textContent;
-      if (badge && !badge.classList.contains("hidden")) sections.push(title);
-    });
-    const nums = [...document.querySelectorAll("#numbers input")].filter(i => i.value.trim()).length;
-    if (nums) sections.unshift($("basicFold").querySelector(".section-title").textContent);
-    const quick = [...document.querySelectorAll('#charFold input[type=checkbox], #safetyBlock input[type=checkbox]')].filter(c => c.checked).length;
-    const total = sections.length + (quick ? 1 : 0);
-    $("pendingText").innerHTML = total ? xText.pending.replace("{n}", total).replace("{s}", total === 1 ? "" : "s")
-      .replace("{sections}", sections.slice(0, 3).join(", ") + (sections.length > 3 ? " …" : "")) : xText.none;
-  }
-  setInterval(updatePending, 1500);   // badges set by other sections update on their own schedule
 
   // ---- story chapters ----
   const chapterBtns = [...document.querySelectorAll("#chapters button")];
@@ -1514,11 +1718,13 @@
     ITEM_GROUPS.forEach(g => updateItemStatus(g)); updateStageBadge(); updateCatBadge(); updateExtras();
     catPick.add.clear(); catPick.remove.clear(); catPick.level.clear(); $("levelInput").value = ""; setLevelTarget("all"); rarityBtns.forEach(b => b.setAttribute("aria-pressed", "false"));
     $("catSearch").value = ""; renderCatChips(); renderCatResults();
+    updatePending();
     updateStageBadge();
   });
 
   // ---- errors ----
-  function showError(msg) { const e = $("error"); e.textContent = msg; e.classList.remove("hidden"); }
+  function showError(msg) { const e = $("error"); e.textContent = msg; e.classList.remove("hidden", "note"); }
+  function showNote(msg) { showError(msg); $("error").classList.add("note"); }
   function hideError() { $("error").classList.add("hidden"); }
 
   // ---- copy ----
@@ -1640,6 +1846,8 @@
       fd.append("save_file", file, file.name);
     }
 
+    jobId = [...crypto.getRandomValues(new Uint8Array(16))].map(b => b.toString(16).padStart(2, "0")).join("");
+    fd.append("job_id", jobId);
     setBusy(true);
     let res;
     try {
@@ -1648,13 +1856,26 @@
     } catch {
       res = { ok: false, error: "서버에 연결할 수 없어요. 인터넷 연결을 확인하고 다시 시도하세요." };
     } finally {
-      setBusy(false);
+      setBusy(false); jobId = null;
     }
     render(res, anyEdit);
   });
 
+  let jobId = null;
+  $("cancelEdit").addEventListener("click", async () => {
+    if (!jobId) return;
+    const b = $("cancelEdit"); b.disabled = true; b.textContent = S.cancelling;
+    const fd = new FormData(); fd.append("job_id", jobId);
+    try {
+      const r = await fetch("/api/cancel", { method: "POST", body: fd });
+      const j = await r.json();
+      if (!j.ok) { showNote(j.error || S.cancel_failed); b.textContent = S.cancel; b.disabled = !!j.late; }
+    } catch { showNote(S.cancel_failed); b.textContent = S.cancel; b.disabled = false; }
+  });
   function setBusy(busy) {
     const btn = $("submit");
+    $("reset").classList.toggle("hidden", busy);
+    const c = $("cancelEdit"); c.classList.toggle("hidden", !busy); c.disabled = false; c.textContent = S.cancel;
     btn.disabled = busy;
     btn.innerHTML = busy
       ? '<span class="spinner"></span> 작업 중… 1분 정도 걸릴 수 있어요'
@@ -1667,12 +1888,18 @@
     ["res-codes", "res-changes", "res-done", "res-failed", "res-downloads", "dlEdited", "dlOriginal"]
       .forEach(id => $(id).classList.add("hidden"));
 
+    if (res.cancelled && !res.before && !res.original_b64) {
+      box.classList.remove("show");
+      showNote(res.error);
+      return;
+    }
     if (res.error && !res.ok && !res.before && !res.original_b64) {
       box.classList.remove("show");
       showError(res.error);
       return;
     }
     if (res.error) showError(res.error);
+    else if (res.notice) showNote(res.notice);
 
     if (res.transfer_code) {
       $("newTc").textContent = res.transfer_code;
