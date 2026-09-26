@@ -60,7 +60,7 @@ Python 3.9 이상이 필요해요 (<https://www.python.org/downloads/>). Windows
 1. 위의 **Deploy to Render** 버튼을 누르세요 (또는
    <https://render.com/deploy?repo=https://github.com/books4jy-art/Battle-Cats-Editor-Site-KR> 열기).
 2. GitHub로 Render에 로그인하고 **Deploy Blueprint** 를 누르세요. 설정은 `render.yaml` 이 자동으로 채워요.
-3. 몇 분 뒤 `https://battle-cats-editor-site-kr-28450042.onrender.com` 같은 링크가 나와요.
+3. 몇 분 뒤 `https://battle-cats-editor-site-kr-0-28450042.onrender.com` 같은 링크가 나와요.
    휴대폰, 태블릿, 컴퓨터 어디서든 열 수 있어요.
 
 주소 끝의 숫자는 검색으로 쉽게 찾지 못하게 붙인 무작위 숫자예요. 사이트는 검색 엔진에 등록되지 않도록 설정돼 있어요.

@@ -1,7 +1,7 @@
 # Render Blueprint: lets Render set up the site automatically from this repo.
 services:
   - type: web
-    name: battle-cats-editor-site-kr-28450042
+    name: battle-cats-editor-site-kr-0-28450042
     runtime: docker
     plan: free
     healthCheckPath: /
