@@ -302,6 +302,17 @@ def parse_edits(form) -> dict[str, Any] | str:
     return edits
 
 
+@app.after_request
+def no_index(response):
+    response.headers["X-Robots-Tag"] = "noindex, nofollow"  # keep the site out of search results
+    return response
+
+
+@app.get("/robots.txt")
+def robots():
+    return app.response_class("User-agent: *\nDisallow: /\n", mimetype="text/plain")
+
+
 @app.get("/")
 def index():
     return send_from_directory(app.static_folder, "index.html")
