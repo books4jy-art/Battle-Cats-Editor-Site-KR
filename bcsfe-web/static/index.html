@@ -1046,10 +1046,6 @@
       </section>
       </div>
 
-      <div id="safetyBlock">
-        <p class="section-title">안전</p>
-        <label class="switch-row"><span class="name"><svg class="i16"><use href="#i-user"/></svg> 새 계정 ID로 업로드</span><span class="switch"><input type="checkbox" name="new_account" /><span class="track"></span></span></label>
-      </div>
 
 
       <p class="hint">고양이 통조림과 유료 티켓은 계정 정지 위험이 가장 높아요. 경험치, NP, 배틀 아이템, 캐릭터 획득은 비교적 안전해요. 백업은 꼭 보관하세요.</p>
@@ -1560,12 +1556,10 @@
   function collectEdits() {
     return groups.map(g => {
       const rows = [...g.querySelectorAll("details.fold")].map(f => ({ f, title: clean(f.querySelector(".section-title")), lines: describe(f) })).filter(r => r.lines.length);
-      if (g.id === "grp-account" && mode === "codes" && form.new_account.checked) rows.push({ f: $("safetyBlock"), title: S.safety, lines: [labelOf(form.new_account)] });
       return { g, rows };
     }).filter(d => d.rows.length);
   }
   function clearFold(f) {
-    if (f.id === "safetyBlock") { form.new_account.checked = false; return; }
     f.querySelectorAll("input, select").forEach(el => {
       if (el.id === "catSearch") return;
       if (el.type === "checkbox") el.checked = false; else if (el.tagName === "SELECT") el.selectedIndex = 0; else el.value = "";
@@ -1668,7 +1662,6 @@
     document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", String(t.dataset.mode === m)));
     $("pane-codes").classList.toggle("hidden", m !== "codes");
     $("pane-file").classList.toggle("hidden", m !== "file");
-    $("safetyBlock").classList.toggle("hidden", m !== "codes");
     $("ccOptional").classList.toggle("hidden", m !== "file");
     $("submitLabel").textContent = m === "codes" ? "편집 & 업로드" : "파일 편집";
     if (m === "file" && !countryTouched) setCountry(null);
