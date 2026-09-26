@@ -35,6 +35,7 @@ sys.stdout = sys.stderr
 from importlib import resources  # noqa: E402
 
 import bcsfe  # noqa: E402
+import extras  # noqa: E402
 from bcsfe import core  # noqa: E402
 
 # Numeric fields: (save attribute, max-value key, managed item type or None).
@@ -58,6 +59,7 @@ NUMERIC_FIELDS: dict[str, tuple[str, str, Any]] = {
         core.ManagedItemType.LEGEND_TICKET,
     ),
     "platinum_shards": ("platinum_shards", "platinum_tickets", None),
+    "hundred_million_ticket": ("hundred_million_ticket", "hundred_million_tickets", None),
 }
 
 LABELS = {
@@ -70,6 +72,7 @@ LABELS = {
     "platinum_tickets": "플래티넘 티켓",
     "legend_tickets": "레전드 티켓",
     "platinum_shards": "플래티넘의 조각",
+    "hundred_million_ticket": "1억 다운로드 기념 티켓",
 }
 
 
@@ -111,8 +114,17 @@ MAP_GROUPS: dict[str, tuple[str, str, int, int | None]] = {
     "zero": ("zero_legends", "ND", 34000, None),
     "event": ("event_stages", "S", 1000, 1),
     "collab": ("event_stages", "C", 2000, 2),
+    "gauntlet": ("gauntlets", "A", 24000, None),
+    "collab_gauntlet": ("collab_gauntlets", "CA", 27000, None),
+    "behemoth": ("behemoth_culling", "Q", 31000, None),
+    "enigma": ("enigma_clears", "H", 25000, None),
+    "tower": ("tower.chapters", "V", 7000, None),
+    "legend_quest": ("legend_quest", "D", 16000, None),
+    "catamin_stage": ("catamin_stages.chapters", "B", 14000, None),
+    "catclaw": ("dojo_chapters", "G", 37000, None),
 }
-MAP_GROUP_NAMES = {'legend': '레전드 스토리', 'uncanny': '신 레전드 스토리', 'zero': '레전드 스토리 0', 'event': '이벤트 스테이지', 'collab': '콜라보 스테이지'}
+NO_R_PREFIX = {'catclaw'}  # map names without the R prefix
+MAP_GROUP_NAMES = {'legend': '레전드 스토리', 'uncanny': '신 레전드 스토리', 'zero': '레전드 스토리 0', 'event': '이벤트 스테이지', 'collab': '콜라보 스테이지', 'gauntlet': '건틀렛', 'collab_gauntlet': '콜라보 건틀렛', 'behemoth': '거대 수석 사냥', 'enigma': '수수께끼 스테이지', 'tower': '탑', 'legend_quest': '레전드 퀘스트', 'catamin_stage': '고양이 드링크 스테이지', 'catclaw': '냥코 도장 랭킹전'}
 
 
 def clear_map_group(save: core.SaveFile, key: str, crowns: int) -> int:
@@ -125,11 +137,13 @@ def clear_map_group(save: core.SaveFile, key: str, crowns: int) -> int:
     from bcsfe.cli.edits import map as map_edits
 
     attr, code, base, map_type = MAP_GROUPS[key]
-    chapters = getattr(save, attr)
+    chapters = save
+    for part in attr.split("."):
+        chapters = getattr(chapters, part)
     if key == "uncanny":
         chapters = chapters.chapters
     map_option = core.MapOption.from_save(save)
-    names = core.MapNames(save, code, base_index=base, output=False).map_names
+    names = core.MapNames(save, code, base_index=base, output=False, no_r_prefix=key in NO_R_PREFIX).map_names
     if map_option is None or not names:
         raise RuntimeError('게임 데이터를 내려받지 못했어요 — 나중에 다시 시도하세요' if map_option is None else '이 게임 버전의 게임 데이터에 맵이 없어요')
 
@@ -320,7 +334,7 @@ def set_talent_orbs(save: core.SaveFile, spec: dict[str, Any]) -> str:
     return '본능 구슬 {n}종류를 {count}개로 설정'.format(n=n, s="" if n == 1 else "s", count=count)
 
 
-ITEM_GROUP_NAMES = {'fruit': '개다래 열매 · 씨앗', 'stone': '수석 · 결정', 'eye': '캣츠아이', 'battle': '배틀 아이템', 'drink': '고양이 드링크', 'chest': '보물 상자'}
+ITEM_GROUP_NAMES = {'fruit': '개다래 열매 · 씨앗', 'stone': '수석 · 결정', 'eye': '캣츠아이', 'battle': '배틀 아이템', 'drink': '고양이 드링크', 'chest': '보물 상자', 'material': '성 재료', 'medal': '미궁 훈장'}
 BEHEMOTH_GROUP = 9  # matatabi group of behemoth stones/gems (the "crystals")
 
 
@@ -385,10 +399,14 @@ def item_catalog(cc: core.CountryCode) -> dict[str, Any]:
             "stone": [group('수석', parts["stones"]), group('결정', parts["gems"])],
             "battle": [group('배틀 아이템', battle_rows)],
             "drink": [group('고양이 드링크', gatya_rows(6))],
+            "material": [group(ITEM_GROUP_NAMES["material"], gatya_rows(7)[:8]),        # normal materials
+                         group(ITEM_GROUP_NAMES["material"] + " Z", gatya_rows(7)[8:])],  # the Z versions
+            "medal": [group(ITEM_GROUP_NAMES["medal"], gatya_rows(11))],
             "chest": [group('보물 상자', gatya_rows(12), merge=True)],
             "eye": [group('캣츠아이', eye_rows)],
             "max": {"fruit": maxes.catfruit_new, "stone": maxes.catfruit_new, "eye": maxes.catseyes,
-                    "battle": maxes.battle_items, "drink": maxes.catamins, "chest": maxes.treasure_chests}}
+                    "battle": maxes.battle_items, "drink": maxes.catamins, "chest": maxes.treasure_chests,
+                    "material": maxes.base_materials, "medal": maxes.labyrinth_medals}}
 
 
 def set_items(save: core.SaveFile, group: str, values: dict[int, int]) -> str:
@@ -402,6 +420,10 @@ def set_items(save: core.SaveFile, group: str, values: dict[int, int]) -> str:
         target, cap = save.treasure_chests, maxes.treasure_chests
     elif group == "battle":
         target, cap = save.battle_items.items, maxes.battle_items
+    elif group == "material":
+        target, cap = save.ototo.base_materials.materials, maxes.base_materials
+    elif group == "medal":
+        target, cap = save.labyrinth_medals, maxes.labyrinth_medals
     else:
         target = save.catfruit
         cap = maxes.catfruit_new if save.game_version >= 110400 else maxes.catfruit_old
@@ -410,7 +432,7 @@ def set_items(save: core.SaveFile, group: str, values: dict[int, int]) -> str:
     for index, value in sorted((int(k), int(v)) for k, v in values.items()):
         if index < len(target):
             amount = max(0, min(int(value), cap))
-            if group == "battle":
+            if group in ("battle", "material"):
                 target[index].amount = amount
             else:
                 target[index] = amount
@@ -637,7 +659,7 @@ def apply_edits(save: core.SaveFile, edits: dict[str, Any], data_dir: str) -> tu
             edit_cats(save, edits, attempt, done)
 
     # Catfruit & seeds, behemoth stones & gems, catseyes (indexes into the save's lists).
-    for group in ("fruit", "stone", "eye", "battle", "drink", "chest"):
+    for group in ("fruit", "stone", "eye", "battle", "drink", "chest", "material", "medal"):
         if edits.get(f"items_{group}"):
             item_out: dict[str, str] = {}
             before = len(done)
@@ -685,6 +707,13 @@ def apply_edits(save: core.SaveFile, edits: dict[str, Any], data_dir: str) -> tu
                     save.cats.true_form_cats(save, cats, False, set_forms)
                 attempt("보유 캐릭터 제3형태 진화", f)
 
+    # Forms & talents, special skills, Ototo, Gamatoto, endless items, more stages,
+    # progress and fixes (extras.py); most need game data.
+    if any(edits.get(k) for k in ("forms", "skills", "ototo", "gamatoto", "endless", "more_stages", "progress", "fixes")):
+        accept_backup_game_data_repo()
+        with game_data_lock(data_dir):
+            extras.apply(core, save, edits, attempt, done)
+
     return done, failed
 
 
@@ -702,10 +731,11 @@ def run(job: dict[str, Any]) -> dict[str, Any]:
     cc = core.CountryCode.from_code(job["cc"]) if job.get("cc") else None
     result: dict[str, Any] = {"ok": False}
 
-    if job["mode"] in ("catalog", "orbs", "items"):
+    if job["mode"] in ("catalog", "orbs", "items", "extras"):
         accept_backup_game_data_repo()
         with game_data_lock(data_dir):
-            build = {"catalog": cat_catalog, "orbs": orb_catalog, "items": item_catalog}[job["mode"]]
+            build = {"catalog": cat_catalog, "orbs": orb_catalog, "items": item_catalog,
+                     "extras": lambda c: extras.catalog(core, c)}[job["mode"]]
             return build(cc or core.CountryCode.from_code("en"))
 
     # ---- load the save ----------------------------------------------------
