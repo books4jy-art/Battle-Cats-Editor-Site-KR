@@ -402,7 +402,7 @@ def edit():
             return fail("편집할 항목을 하나 이상 고르세요. 이어하기 코드는 한 번만 쓸 수 있어서, "
                         "변경 사항과 함께 세이브를 다시 업로드해야 해요.")
         job.update(transfer_code=tc, confirmation_code=pin,
-                   new_account=form.get("new_account") in ("1", "true", "on"))
+                   new_account=False)  # the new-account upload option was removed from the site
     else:
         upload = request.files.get("save_file")
         if upload is None or not upload.filename:
