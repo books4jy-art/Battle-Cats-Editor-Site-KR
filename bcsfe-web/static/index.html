@@ -351,12 +351,19 @@
 
   footer { padding: 0 24px 32px; text-align: center; }
   .hidden { display: none !important; }
+  .disclaimer { display: flex; gap: 8px; margin: 12px 0 0; padding: 9px 11px; border: 1px solid rgba(251,191,36,.28); border-radius: 8px;
+                background: rgba(251,191,36,.06); font-size: 11px; line-height: 1.55; color: rgba(253,230,138,.9); }
+  .disclaimer::before { content: "!"; flex: none; width: 16px; height: 16px; border-radius: 50%; background: rgba(251,191,36,.85); color: #0b0d12;
+                        font-size: 11px; font-weight: 700; line-height: 16px; text-align: center; margin-top: 1px; }
+  .switch-row .name .name-stack { display: block; min-width: 0; }
+  .set-row .name small.warn, .switch-row .name small.warn { display: block; font-size: 10px; margin-top: 1px; color: rgba(251,191,36,.85); }
 
   /* option groups + jump bar */
   .panel-head { position: sticky; top: 0; z-index: 6; margin: -24px -24px 16px; padding: 16px 24px 12px;
                 background: rgba(13,15,21,.96); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
                 border-radius: 16px 16px 0 0; border-bottom: 1px solid var(--w-05); }
   .panel-head .panel-tools { margin-bottom: 10px; }
+  main > *, .panel-head, .group-jump { min-width: 0; }   /* keep the scrolling jump bar from widening the page */
   .group-jump { display: flex; flex-wrap: nowrap; justify-content: flex-start; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px;
                 -webkit-mask-image: linear-gradient(90deg, #000 88%, transparent); mask-image: linear-gradient(90deg, #000 88%, transparent); }
   .group-jump::-webkit-scrollbar { display: none; }
@@ -638,6 +645,7 @@
               <div class="hidden" id="medalPicks" style="margin-top:18px"></div>
               <p class="hint" id="medalStatus" style="margin-top:12px"></p>
               <p class="hint" id="medalHint" style="margin-top:8px"></p>
+              <p class="disclaimer">미궁 훈장은 미궁 이벤트가 열려 있을 때만 게임에 표시돼요.</p>
             </div>
           </details>
         </div>
@@ -930,6 +938,7 @@
               </select>
             </div>
             <p class="hint" style="margin-top:12px">게임 버전에 있는 모든 맵을 고른 크라운 수까지 클리어해요. 기존 클리어 횟수는 그대로예요.</p>
+            <p class="disclaimer">이벤트 · 콜라보 스테이지와 기간 한정 스테이지(건틀렛, 거대 수석 사냥, 수수께끼 스테이지, 탑, 레전드 퀘스트, 고양이 드링크 스테이지, 냥코 도장 랭킹전)는 이벤트가 열려 있을 때만 게임에 표시돼요. 클리어 기록은 저장되고 이벤트가 다시 열리면 보여요.</p>
             </div>
           </details>
           <details class="fold auto-badge" id="specialFold" data-keywords="aku outbreaks zombie filibuster challenge dojo score itf 악마 좀비 필리버스터 챌린지 도장 점수">
@@ -973,7 +982,7 @@
                 <input class="input" id="f-playtime_hours" name="playtime_hours" inputmode="numeric" placeholder="—" autocomplete="off" data-send data-num />
                 
               </div>
-              <div class="set-row"><label class="name" for="f-rank_rewards">유저 랭크 보상</label>
+              <div class="set-row"><label class="name" for="f-rank_rewards">유저 랭크 보상<small class="warn">현재 유저 랭크로 받을 수 있는 보상만 받음 처리돼요.</small></label>
                 <select class="input" id="f-rank_rewards" name="rank_rewards" data-send>
                   <option value="">바꾸지 않음</option>
                   <option value="claim">받을 수 있는 보상 받음 처리</option>
@@ -1002,14 +1011,14 @@
                   <option value="remove">전부 해제</option>
                 </select>
               </div>
-              <div class="set-row"><label class="name" for="f-gold_pass">골드 회원<small>계정 정지 위험 높음</small></label>
+              <div class="set-row"><label class="name" for="f-gold_pass">골드 회원<small>계정 정지 위험 높음</small><small class="warn">서버가 취소할 수 있어요.</small></label>
                 <select class="input" id="f-gold_pass" name="gold_pass" data-send>
                   <option value="">바꾸지 않음</option>
                   <option value="give">30일 지급</option>
                   <option value="remove">해지</option>
                 </select>
               </div>
-              <label class="switch-row"><span class="name">재시작 팩 구매 가능하게</span><span class="switch"><input type="checkbox" name="restart_pack" data-send /><span class="track"></span></span></label>
+              <label class="switch-row"><span class="name"><span class="name-stack">재시작 팩 구매 가능하게<small class="warn">조건을 만족하는 계정에만 표시돼요.</small></span></span><span class="switch"><input type="checkbox" name="restart_pack" data-send /><span class="track"></span></span></label>
               <label class="switch-row"><span class="name">와일드캣 슬롯 · 고양이 스크래처 초기화</span><span class="switch"><input type="checkbox" name="reset_gambling" data-send /><span class="track"></span></span></label>
               <label class="switch-row"><span class="name">골든 야옹컴 사용 횟수 초기화</span><span class="switch"><input type="checkbox" name="reset_golden_cpu" data-send /><span class="track"></span></span></label>
               </div>
